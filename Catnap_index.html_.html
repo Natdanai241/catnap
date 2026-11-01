@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fde3ec">
+<title>Catnap — ปริศนาแมวงีบ</title>
+<style>
+:root{
+  --bg1:#fff4ea;--bg2:#fde3ec;--bg3:#e3effa;
+  --ink:#4a3640;--ink2:#7f6874;--card:#fffaf5;--line:#4a3640;
+  --pink:#f493b1;--pink-d:#e0688e;--mint:#86d3b0;--sky:#8cc5ea;--butter:#f7d474;
+  --seam:#6f5563;--danger:#e5536f;--ok:#3fae80;
+  --shadow:0 10px 28px rgba(110,70,90,.16);--shadow-s:0 3px 10px rgba(110,70,90,.12);
+  font-family:"Noto Sans Thai","Sarabun","Leelawadee UI","Thonburi","Tahoma",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color:var(--ink);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden}
+body{
+  background:linear-gradient(160deg,var(--bg1) 0%,var(--bg2) 55%,var(--bg3) 100%);
+  -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;
+  font-size:15px;line-height:1.45;
+}
+button{font:inherit;color:inherit}
+/* ---------- background ---------- */
+#bgDeco{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.blob{position:absolute;border-radius:50%;filter:blur(40px);opacity:.55;animation:drift 22s ease-in-out infinite alternate}
+.b1{width:46vmax;height:46vmax;background:#ffd6e4;left:-14vmax;top:-12vmax}
+.b2{width:40vmax;height:40vmax;background:#d7ecff;right:-12vmax;bottom:-14vmax;animation-delay:-7s}
+.b3{width:30vmax;height:30vmax;background:#fff0c2;left:40%;top:45%;animation-delay:-13s}
+.float{position:absolute;width:38px;height:38px;color:#e9b3c6;opacity:.45;animation:floaty 14s ease-in-out infinite}
+.f1{left:6%;top:18%}.f2{left:84%;top:12%;animation-delay:-3s;color:#b9d6ef}
+.f3{left:12%;top:78%;animation-delay:-6s;color:#f2d38b}.f4{left:88%;top:70%;animation-delay:-9s}
+.f5{left:48%;top:6%;animation-delay:-4s;width:28px;height:28px;color:#bfe3cf}
+.f6{left:60%;top:88%;animation-delay:-11s;color:#d5c6f0}
+@keyframes drift{to{transform:translate(6vmax,4vmax) scale(1.1)}}
+@keyframes floaty{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-26px) rotate(10deg)}}
+/* ---------- layout ---------- */
+#app{
+  position:relative;z-index:1;height:100vh;height:100dvh;margin:0 auto;max-width:600px;
+  display:grid;grid-template-columns:minmax(0,1fr);
+  grid-template-rows:auto auto minmax(0,1fr) auto auto;
+  grid-template-areas:"top" "stats" "board" "msg" "tools";
+  gap:8px;padding:max(10px,env(safe-area-inset-top)) 12px max(10px,env(safe-area-inset-bottom));
+}
+@media (min-aspect-ratio:6/5){
+  #app{max-width:1180px;grid-template-columns:minmax(0,1fr) minmax(270px,340px);
+    grid-template-rows:auto auto minmax(0,1fr) auto;
+    grid-template-areas:"board top" "board stats" "board msg" "board tools";column-gap:18px}
+  #message{align-self:start}
+}
+#top{grid-area:top;display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.brand{display:flex;align-items:center;gap:8px;min-width:0}
+.mascot{width:64px;height:48px;flex:none;overflow:visible}
+.brand-text{min-width:0}
+.brand h1{margin:0;font-size:22px;line-height:1.1;letter-spacing:.5px;color:var(--pink-d);font-weight:800}
+.brand p{margin:0;font-size:12.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-actions{display:flex;gap:6px;flex:none}
+.icon-btn{position:relative;width:40px;height:40px;border-radius:14px;border:0;background:rgba(255,255,255,.8);
+  box-shadow:var(--shadow-s);display:grid;place-items:center;cursor:pointer;transition:transform .15s,background .2s}
+.icon-btn svg{width:22px;height:22px}
+.icon-btn:active{transform:scale(.92)}
+.icon-btn.off{opacity:.55}
+.icon-btn.off::after{content:"";position:absolute;width:26px;height:2.5px;background:var(--danger);border-radius:2px;transform:rotate(-45deg)}
+#stats{grid-area:stats;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.stat{background:rgba(255,255,255,.75);border-radius:14px;padding:4px 6px;text-align:center;box-shadow:var(--shadow-s)}
+.stat-k{display:block;font-size:11px;color:var(--ink2)}
+.stat-v{display:block;font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+#boardWrap{grid-area:board;position:relative;min-height:0;min-width:0}
+#message{grid-area:msg;display:flex;align-items:center;gap:8px;min-height:52px;padding:6px 12px;border-radius:16px;
+  background:rgba(255,255,255,.82);box-shadow:var(--shadow-s);font-size:13.5px;transition:background .3s}
+#message .msg-cat{width:34px;height:34px;flex:none;--coat:#f6a96b}
+#msgText{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#message.hint{background:#fff6d6}#message.error{background:#ffe3e8}#message.win{background:#e1f6ea}
+#tools{grid-area:tools;display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.tool{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:58px;border:0;border-radius:16px;
+  background:#fff;box-shadow:var(--shadow-s);cursor:pointer;font-size:12px;font-weight:600;padding:4px 2px;transition:transform .12s,background .2s}
+.tool svg{width:26px;height:26px}
+.tool:active{transform:scale(.94)}
+.tool:disabled{opacity:.45;cursor:default}
+#btnMode{background:#ffe6ef;--coat:#f6a96b}
+#btnMode.note{background:#e2f0fb}
+#btnHint{background:#fff3cc}
+/* ---------- board ---------- */
+#board{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:grid;
+  grid-template-columns:repeat(var(--n,5),var(--cs,48px));grid-auto-rows:var(--cs,48px);
+  padding:5px;background:var(--seam);border-radius:16px;overflow:hidden;
+  box-shadow:0 14px 34px rgba(110,70,90,.28),0 0 0 4px rgba(255,255,255,.7);outline:none}
+#board:focus-visible{box-shadow:0 14px 34px rgba(110,70,90,.28),0 0 0 4px var(--pink)}
+#board.won{animation:boardGlow 1.6s ease-in-out 2}
+@keyframes boardGlow{50%{box-shadow:0 14px 40px rgba(110,70,90,.3),0 0 0 8px #ffe28a}}
+.cell{position:relative;border:0;margin:0;padding:0;appearance:none;-webkit-appearance:none;cursor:pointer;display:grid;place-items:center;
+  background-color:var(--rc);background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.2) 0 2px,transparent 2px 7px);
+  touch-action:manipulation;outline:none;transition:filter .2s}
+@media (hover:hover){.cell:hover{filter:brightness(1.05)}}
+.cell::before{content:"";position:absolute;inset:calc(var(--cs)*.09);border:0 dashed rgba(255,255,255,.9);pointer-events:none}
+.cell.bt::before{border-top-width:1.5px}.cell.br::before{border-right-width:1.5px}
+.cell.bb::before{border-bottom-width:1.5px}.cell.bl::before{border-left-width:1.5px}
+.cell>*{pointer-events:none}
+.cell .fb{position:absolute;inset:0;opacity:0;transition:opacity .2s;
+  background:repeating-linear-gradient(-45deg,rgba(74,54,64,.17) 0 2px,transparent 2px 6px)}
+.cell.is-forbid .fb{opacity:1}
+.cell .x{position:absolute;inset:0;display:grid;place-items:center;opacity:0;transform:scale(.5);transition:opacity .15s,transform .15s}
+.cell .x::before,.cell .x::after{content:"";position:absolute;width:38%;height:max(2.5px,calc(var(--cs)*.075));background:#7a5a6b;border-radius:4px;transform:rotate(45deg)}
+.cell .x::after{transform:rotate(-45deg)}
+.cell.is-x .x{opacity:.85;transform:scale(1)}
+.cell .dot{position:absolute;inset:0;display:grid;place-items:center;opacity:0;transition:opacity .15s}
+.cell .dot svg{width:42%;height:42%;color:#a8708a}
+.cell.is-dot .dot{opacity:.8}
+.cell .cat-svg{position:relative;z-index:2;width:calc(var(--cs)*.82);height:calc(var(--cs)*.82);opacity:0;transform:scale(.3);
+  transition:opacity .15s,transform .2s;filter:drop-shadow(0 2px 1.5px rgba(74,54,64,.28))}
+.cell.is-cat .cat-svg{opacity:1;transform:scale(1);animation:breathe 3.4s ease-in-out infinite}
+.cell.pop .cat-svg{animation:catPop .4s cubic-bezier(.3,1.6,.5,1)}
+.cell .burst{position:absolute;width:86%;height:86%;border-radius:50%;border:3px solid rgba(255,255,255,.95);opacity:0;z-index:3}
+.cell.pop .burst{animation:burst .55s ease-out}
+.cell .ring{position:absolute;inset:2px;border-radius:9px;z-index:4}
+.cell.is-sel .ring{box-shadow:inset 0 0 0 3px rgba(255,255,255,.95),inset 0 0 0 5px var(--pink-d)}
+.cell.is-conflict .ring,.cell.is-wrong .ring{box-shadow:inset 0 0 0 3px var(--danger);background:rgba(229,83,111,.2)}
+.cell.is-conflict .cat-svg,.cell.is-wrong .cat-svg{animation:wobble 1.1s ease-in-out infinite}
+.cell.is-hint .ring{box-shadow:inset 0 0 0 3px #ffb52e,0 0 14px 3px rgba(255,191,63,.85);animation:pulse 1s ease-in-out infinite}
+#board.focusing .cell:not(.is-hunit):not(.is-hint){filter:saturate(.45) brightness(.9)}
+#board.show-sol .cell.is-sol::after{content:"";position:absolute;width:22%;height:22%;top:7%;right:7%;border-radius:50%;background:var(--ok);z-index:5;box-shadow:0 0 0 2px #fff}
+#board.won .cell.is-cat .cat-svg{animation:happy .7s ease-in-out calc(var(--d,0)*1ms) 3}
+#board.note .cell{cursor:cell}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes catPop{0%{transform:scale(.2) rotate(-18deg)}70%{transform:scale(1.16) rotate(4deg)}100%{transform:scale(1)}}
+@keyframes burst{0%{opacity:.95;transform:scale(.3)}100%{opacity:0;transform:scale(1.5)}}
+@keyframes wobble{0%,100%{transform:rotate(0)}25%{transform:rotate(-9deg)}75%{transform:rotate(9deg)}}
+@keyframes pulse{50%{opacity:.55}}
+@keyframes happy{0%,100%{transform:translateY(0) scale(1)}40%{transform:translateY(-22%) scale(1.1)}}
+/* ---------- mascot anim ---------- */
+.mascot .tail{transform-origin:100px 76px;animation:tail 3s ease-in-out infinite}
+.mascot .zz{font:700 13px sans-serif;fill:#9a7ac4;animation:zz 3s ease-in-out infinite;opacity:0}
+.mascot .z2{animation-delay:1s}.mascot .z3{animation-delay:2s}
+@keyframes tail{50%{transform:rotate(-12deg)}}
+@keyframes zz{0%{opacity:0;transform:translate(0,6px)}30%{opacity:1}100%{opacity:0;transform:translate(8px,-10px)}}
+/* ---------- modals ---------- */
+.modal{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:14px;
+  background:rgba(74,54,64,.38);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.modal.open{display:flex;animation:fadeIn .2s ease}
+.sheet{position:relative;width:100%;max-width:520px;max-height:calc(100dvh - 28px);overflow:auto;background:var(--card);
+  border-radius:24px;padding:18px 18px 20px;box-shadow:var(--shadow);animation:popIn .25s cubic-bezier(.3,1.4,.5,1);user-select:text;-webkit-user-select:text}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.sheet h2{margin:0;font-size:20px;color:var(--pink-d)}
+.sheet h3{margin:0 0 4px;font-size:16px}
+.muted{color:var(--ink2);font-size:13px;margin:0 0 8px}
+.card{background:#fff;border-radius:18px;padding:12px 14px;margin-top:10px;box-shadow:var(--shadow-s)}
+.card.daily{display:flex;align-items:center;justify-content:space-between;gap:10px;background:linear-gradient(120deg,#fff3d1,#ffe3ec)}
+.card.daily p{margin:0;font-size:13px;color:var(--ink2)}
+.btn{border:0;border-radius:14px;padding:10px 16px;min-height:44px;background:#f1e6ec;font-weight:700;cursor:pointer;box-shadow:var(--shadow-s);transition:transform .12s}
+.btn:active{transform:scale(.95)}
+.btn.primary{background:var(--pink);color:#fff}
+.btn.danger{background:#ffd9df;color:#a32842}
+.row-btns{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}
+.row-btns .btn{flex:1 1 auto}
+.level-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px}
+.lv{position:relative;min-height:52px;border:0;border-radius:14px;background:#f6eef2;cursor:pointer;font-weight:800;font-size:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
+.lv small{font-size:10px;font-weight:600;color:#d39a2c;letter-spacing:-1px}
+.lv.done{background:#e1f4e9}.lv.current{box-shadow:0 0 0 3px var(--pink)}
+.lv:disabled{opacity:.4;cursor:not-allowed}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.chip{border:0;border-radius:999px;padding:8px 14px;min-height:40px;background:#f3eaef;cursor:pointer;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--pink);color:#fff}
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.rule{background:#fff;border-radius:16px;padding:10px;box-shadow:var(--shadow-s);font-size:13px}
+.rule b{display:block;color:var(--pink-d);font-size:14px}
+.tut-list{padding-left:20px;margin:8px 0;font-size:14px}
+.tut-list li{margin:4px 0}
+.kbd{font-size:12px;color:var(--ink2);background:#f6eef2;border-radius:12px;padding:8px 10px}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px dashed #ecdce4}
+.set-row p{margin:0;font-size:12px;color:var(--ink2)}
+.switch{flex:none;width:54px;height:32px;border-radius:999px;border:0;background:#e4d7de;position:relative;cursor:pointer;transition:background .2s}
+.switch::after{content:"";position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.2);transition:transform .2s}
+.switch[aria-checked="true"]{background:var(--mint)}
+.switch[aria-checked="true"]::after{transform:translateX(22px)}
+.win{text-align:center}
+.win-cat{width:110px;height:110px;margin:-6px auto 0;display:block;--coat:#f6a96b;animation:happy 1s ease-in-out infinite}
+.stars{font-size:34px;letter-spacing:4px;color:#f5b82e;margin:2px 0}
+.stars .dim{color:#e7dbe1}
+.win-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
+.win-stats div{background:#fff;border-radius:12px;padding:6px 2px;box-shadow:var(--shadow-s);font-size:11px;color:var(--ink2)}
+.win-stats b{display:block;font-size:16px;color:var(--ink)}
+details{text-align:left;background:#fff;border-radius:16px;padding:8px 12px;box-shadow:var(--shadow-s)}
+summary{cursor:pointer;font-weight:700;color:var(--pink-d);padding:4px 0}
+#stepList{margin:6px 0 0;padding-left:0;list-style:none;max-height:34dvh;overflow:auto;font-size:13px}
+#stepList li{display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px dashed #f0e2e9}
+.badge{flex:none;width:24px;height:24px;border-radius:8px;display:grid;place-items:center;font-weight:800;font-size:13px}
+.badge.place{background:#ffe6ef;--coat:#f6a96b}.badge.place svg{width:22px;height:22px}
+.badge.elim{background:#eef0f5;color:#7a5a6b}
+.loader{text-align:center;background:var(--card);border-radius:24px;padding:22px 26px;box-shadow:var(--shadow)}
+.yarn{width:64px;height:64px;animation:spin 1.2s linear infinite;color:var(--pink)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0}}
+@keyframes popIn{from{transform:scale(.92) translateY(10px);opacity:0}}
+/* ---------- toast / error / debug ---------- */
+#toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-140%);z-index:80;background:var(--ink);color:#fff;
+  padding:8px 16px;border-radius:999px;font-size:13px;box-shadow:var(--shadow);transition:transform .3s;max-width:90vw;text-align:center}
+#toast.show{transform:translate(-50%,0)}
+#errorBar{position:fixed;left:8px;right:8px;top:8px;z-index:100;display:none;align-items:flex-start;gap:8px;background:#ffe1e6;color:#8f1d36;
+  border:2px solid #f3a3b2;border-radius:14px;padding:10px 12px;font-size:13px;box-shadow:var(--shadow)}
+#errorBar.show{display:flex}
+#errorBar span{flex:1;user-select:text}
+#errorBar button{border:0;background:#fff;border-radius:10px;padding:4px 10px;cursor:pointer}
+#debugPanel{position:fixed;left:8px;bottom:8px;z-index:60;width:min(440px,calc(100vw - 16px));max-height:72dvh;overflow:auto;background:rgba(32,24,30,.94);
+  color:#f5eaf0;border-radius:16px;padding:10px 12px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;box-shadow:var(--shadow);user-select:text;-webkit-user-select:text}
+#debugPanel[hidden]{display:none}
+.dbg-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.dbg-btns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.dbg-btns button,.dbg-head button{border:0;border-radius:8px;padding:6px 9px;background:#4a3a44;color:#fff;cursor:pointer;font:inherit}
+#debugPanel pre{margin:6px 0;white-space:pre-wrap;word-break:break-word;background:rgba(255,255,255,.06);border-radius:8px;padding:6px 8px}
+#confetti{position:fixed;inset:0;z-index:70;pointer-events:none;width:100vw;height:100vh}
+/* ---------- compact ---------- */
+@media (max-height:640px){
+  #app{gap:6px}
+  .mascot{width:52px;height:40px}
+  .brand h1{font-size:19px}
+  .stat-v{font-size:15px}
+  .tool{min-height:50px}
+  .tool svg{width:22px;height:22px}
+  #message{min-height:44px;font-size:12.5px}
+  #message .msg-cat{width:28px;height:28px}
+}
+@media (max-width:360px){.icon-btn{width:36px;height:36px}.brand p{font-size:11.5px}.tool{font-size:11px}}
+@media (min-aspect-ratio:6/5) and (max-height:480px){
+  .tool{min-height:48px;font-size:11px}.stat{padding:2px 4px}.stat-v{font-size:14px}#message{min-height:40px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<!-- ================= SVG LIBRARY ================= -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="catBase" viewBox="0 0 100 100">
+      <g style="stroke:var(--line,#4a3640)" stroke-width="3.4" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M19 47 L22 13 L45 31 Z" style="fill:var(--coat,#f6a96b)"/>
+        <path d="M81 47 L78 13 L55 31 Z" style="fill:var(--coat,#f6a96b)"/>
+        <ellipse cx="50" cy="57" rx="37" ry="30" style="fill:var(--coat,#f6a96b)"/>
+      </g>
+      <path d="M26 33 L27 21 L36 29 Z M74 33 L73 21 L64 29 Z" fill="#f6b3c4"/>
+      <path d="M40 31 q3 6 0 10 M50 28 v11 M60 31 q-3 6 0 10" style="stroke:var(--stripe,rgba(80,40,30,.22))" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="29" cy="67" rx="6.5" ry="3.8" fill="#f59db5" opacity=".75"/>
+      <ellipse cx="71" cy="67" rx="6.5" ry="3.8" fill="#f59db5" opacity=".75"/>
+      <path d="M46 62.5 h8 l-4 4.5 z" fill="#ee7f9d" style="stroke:var(--line,#4a3640)" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M50 67 q-4 5 -8 2 M50 67 q4 5 8 2" fill="none" style="stroke:var(--line,#4a3640)" stroke-width="2.4" stroke-linecap="round"/>
+      <g style="stroke:var(--line,#4a3640)" stroke-width="1.7" stroke-linecap="round" opacity=".55"><path d="M12 59 h14 M13 67 l13 -3 M88 59 h-14 M87 67 l-13 -3"/></g>
+    </symbol>
+    <symbol id="cat" viewBox="0 0 100 100">
+      <use href="#catBase" xlink:href="#catBase" width="100" height="100"/>
+      <g fill="none" style="stroke:var(--line,#4a3640)" stroke-width="3.2" stroke-linecap="round"><path d="M30 55 q7 6 14 0"/><path d="M56 55 q7 6 14 0"/></g>
+    </symbol>
+    <symbol id="catHappy" viewBox="0 0 100 100">
+      <use href="#catBase" xlink:href="#catBase" width="100" height="100"/>
+      <g fill="none" style="stroke:var(--line,#4a3640)" stroke-width="3.4" stroke-linecap="round"><path d="M31 58 q6 -8 12 0"/><path d="M57 58 q6 -8 12 0"/></g>
+    </symbol>
+    <symbol id="paw" viewBox="0 0 100 100">
+      <g fill="currentColor"><ellipse cx="50" cy="66" rx="22" ry="18"/><ellipse cx="22" cy="42" rx="9" ry="11"/><ellipse cx="40" cy="26" rx="9" ry="11"/><ellipse cx="60" cy="26" rx="9" ry="11"/><ellipse cx="78" cy="42" rx="9" ry="11"/></g>
+    </symbol>
+    <symbol id="yarn" viewBox="0 0 100 100">
+      <g fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"><circle cx="50" cy="50" r="34"/><path d="M22 34 q28 10 50 44 M30 22 q30 14 46 52 M18 52 q24 4 40 30 M60 17 q-6 30 20 50"/><path d="M80 74 q12 10 4 22"/></g>
+    </symbol>
+    <symbol id="i-music" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></g></symbol>
+    <symbol id="i-sound" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a8 8 0 0 1 0 11"/></g></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.2a2.8 2.8 0 1 1 3.9 2.6c-.8.4-1.2 1-1.2 1.9"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></g></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/><circle cx="12" cy="12" r="6.6"/></g></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z" fill="#ffe08a"/></g></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></g></symbol>
+    <symbol id="i-restart" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></g></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2" fill="#ffd0de"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2" fill="#cfe6f7"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></g></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1 11-11-3-3L5 16z" fill="#cfe6f7"/><path d="M14 6l3 3"/></g></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  </defs>
+</svg>
+
+<div id="bgDeco" aria-hidden="true">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <svg class="float f1"><use href="#paw" xlink:href="#paw"/></svg>
+  <svg class="float f2"><use href="#yarn" xlink:href="#yarn"/></svg>
+  <svg class="float f3"><use href="#paw" xlink:href="#paw"/></svg>
+  <svg class="float f4"><use href="#yarn" xlink:href="#yarn"/></svg>
+  <svg class="float f5"><use href="#paw" xlink:href="#paw"/></svg>
+  <svg class="float f6"><use href="#paw" xlink:href="#paw"/></svg>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="app">
+  <header id="top">
+    <div class="brand">
+      <svg class="mascot" viewBox="0 0 130 96" aria-hidden="true" style="--coat:#f6a96b">
+        <ellipse cx="66" cy="89" rx="52" ry="6" fill="rgba(110,70,90,.14)"/>
+        <g class="tail"><path d="M100 78 q28 -2 20 -28" fill="none" stroke="#4a3640" stroke-width="12" stroke-linecap="round"/><path d="M100 78 q28 -2 20 -28" fill="none" stroke="#f6a96b" stroke-width="6.5" stroke-linecap="round"/></g>
+        <ellipse cx="74" cy="67" rx="40" ry="21" fill="#f6a96b" stroke="#4a3640" stroke-width="3.4"/>
+        <path d="M66 50 q4 8 0 14 M80 47 q4 9 0 16 M94 51 q4 8 0 14" stroke="rgba(80,40,30,.22)" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+        <ellipse cx="56" cy="84" rx="11" ry="6" fill="#f6a96b" stroke="#4a3640" stroke-width="3"/>
+        <use href="#cat" xlink:href="#cat" x="4" y="30" width="60" height="60"/>
+        <text class="zz z1" x="46" y="28">z</text><text class="zz z2" x="57" y="18">z</text><text class="zz z3" x="68" y="9">Z</text>
+      </svg>
+      <div class="brand-text"><h1>Catnap</h1><p id="puzzleLabel">กำลังเตรียมปริศนา…</p></div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="btnMusic" type="button" aria-label="เปิด/ปิดเพลง" title="เพลง"><svg><use href="#i-music" xlink:href="#i-music"/></svg></button>
+      <button class="icon-btn" id="btnSfx" type="button" aria-label="เปิด/ปิดเสียงเอฟเฟกต์" title="เสียงเอฟเฟกต์"><svg><use href="#i-sound" xlink:href="#i-sound"/></svg></button>
+      <button class="icon-btn" id="btnHelp" type="button" aria-label="วิธีเล่น" title="วิธีเล่น"><svg><use href="#i-help" xlink:href="#i-help"/></svg></button>
+      <button class="icon-btn" id="btnSettings" type="button" aria-label="ตั้งค่า" title="ตั้งค่า"><svg><use href="#i-gear" xlink:href="#i-gear"/></svg></button>
+    </div>
+  </header>
+
+  <section id="stats" aria-label="สถิติ">
+    <div class="stat"><span class="stat-k">เวลา</span><span class="stat-v" id="sTime">0:00</span></div>
+    <div class="stat"><span class="stat-k">ตาเดิน</span><span class="stat-v" id="sMoves">0</span></div>
+    <div class="stat"><span class="stat-k">พลาด</span><span class="stat-v" id="sMist">0</span></div>
+    <div class="stat"><span class="stat-k">แมว</span><span class="stat-v" id="sCats">0/0</span></div>
+  </section>
+
+  <main id="boardWrap"><div id="board" role="grid" aria-label="กระดานปริศนา" tabindex="0"></div></main>
+
+  <div id="message" role="status" aria-live="polite"><svg class="msg-cat" aria-hidden="true"><use href="#cat" xlink:href="#cat"/></svg><span id="msgText">ยินดีต้อนรับสู่ Catnap</span></div>
+
+  <nav id="tools" aria-label="เครื่องมือ">
+    <button class="tool" id="btnMode" type="button" aria-label="สลับโหมดวางแมว/จดโน้ต"><svg><use id="modeIcon" href="#cat" xlink:href="#cat"/></svg><span id="modeLabel">วางแมว</span></button>
+    <button class="tool" id="btnHint" type="button"><svg><use href="#i-bulb" xlink:href="#i-bulb"/></svg><span>คำใบ้</span></button>
+    <button class="tool" id="btnUndo" type="button"><svg><use href="#i-undo" xlink:href="#i-undo"/></svg><span>ย้อนกลับ</span></button>
+    <button class="tool" id="btnRestart" type="button"><svg><use href="#i-restart" xlink:href="#i-restart"/></svg><span>เริ่มใหม่</span></button>
+    <button class="tool" id="btnMenu" type="button"><svg><use href="#i-grid" xlink:href="#i-grid"/></svg><span>ปริศนา</span></button>
+  </nav>
+</div>
+
+<!-- ================= MODALS ================= -->
+<div class="modal" id="menuModal" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
+    <div class="sheet-head"><h2 id="menuTitle">เลือกปริศนา</h2><button class="icon-btn" type="button" data-close aria-label="ปิด"><svg><use href="#i-close" xlink:href="#i-close"/></svg></button></div>
+    <section class="card daily">
+      <div><h3>ความท้าทายประจำวัน</h3><p id="dailyInfo">—</p></div>
+      <button class="btn primary" id="btnDaily" type="button">เล่นวันนี้</button>
+    </section>
+    <section class="card">
+      <h3>ด่านต่อเนื่อง</h3>
+      <p class="muted" id="levelInfo">ผ่านด่านเพื่อปลดล็อกด่านถัดไป</p>
+      <div class="level-grid" id="levelGrid"></div>
+    </section>
+    <section class="card">
+      <h3>ปริศนาสุ่ม</h3>
+      <p class="muted">เลือกขนาดกระดานและระดับความยาก</p>
+      <div class="chips" id="sizeChips" role="group" aria-label="ขนาดกระดาน"></div>
+      <div class="chips" id="diffChips" role="group" aria-label="ความยาก"></div>
+      <button class="btn primary" id="btnRandom" type="button" style="width:100%">สุ่มปริศนาใหม่</button>
+    </section>
+  </div>
+</div>
+
+<div class="modal" id="tutorialModal" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="tutTitle">
+    <div class="sheet-head"><h2 id="tutTitle">วิธีเล่น Catnap</h2><button class="icon-btn" type="button" data-close aria-label="ปิด"><svg><use href="#i-close" xlink:href="#i-close"/></svg></button></div>
+    <p class="muted" style="font-size:14px">เหล่าแมวขี้เซาอยากหาที่งีบบนผ้านวมลายสี ช่วยจัดที่นอนให้ถูกกฎทุกข้อนะ</p>
+    <div class="rules">
+      <div class="rule"><b>แถวละ 1 ตัว</b>ทุกแถวแนวนอนต้องมีแมวพอดี 1 ตัว</div>
+      <div class="rule"><b>คอลัมน์ละ 1 ตัว</b>ทุกคอลัมน์แนวตั้งต้องมีแมวพอดี 1 ตัว</div>
+      <div class="rule"><b>เขตสีละ 1 ตัว</b>ผ้าแต่ละสีต้องมีแมวพอดี 1 ตัว</div>
+      <div class="rule"><b>ห้ามนอนเบียดกัน</b>แมวห้ามอยู่ช่องติดกัน รวมถึงแนวทแยง</div>
+    </div>
+    <ul class="tut-list">
+      <li>แตะช่องเพื่อ<b>วาง</b>หรือ<b>เอาแมวออก</b></li>
+      <li>กดปุ่ม <b>วางแมว / จดโน้ต</b> เพื่อสลับโหมด ในโหมดจดโน้ต แตะ 1 ครั้ง = ✕ (ไม่ใช่แน่) · 2 ครั้ง = รอยเท้า (อาจใช่) · 3 ครั้ง = ลบ</li>
+      <li>ช่องที่มี<b>ลายขีดจาง ๆ</b> คือช่องที่วางแมวไม่ได้แล้ว เพราะชนกับแมวที่วางไว้</li>
+      <li>ถ้าวางแมวชนกฎ แมวจะตัวสั่นและมีกรอบแดง พร้อมบอกเหตุผล</li>
+      <li>ติดตรงไหน กด <b>คำใบ้</b> ระบบจะอธิบายเหตุผลให้ทีละขั้น</li>
+      <li>ทุกปริศนามี<b>คำตอบเดียว</b> และไขได้ด้วยเหตุผล ไม่ต้องเดา</li>
+    </ul>
+    <p class="kbd">คีย์บอร์ด: ลูกศร = เลื่อนช่อง · Space/Enter = วางแมว · X = จดโน้ต · M = สลับโหมด · Z = ย้อนกลับ · H = คำใบ้</p>
+    <div class="row-btns"><button class="btn primary" type="button" data-close data-autofocus>เริ่มเล่นเลย</button></div>
+  </div>
+</div>
+
+<div class="modal" id="settingsModal" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <div class="sheet-head"><h2 id="setTitle">ตั้งค่า</h2><button class="icon-btn" type="button" data-close aria-label="ปิด"><svg><use href="#i-close" xlink:href="#i-close"/></svg></button></div>
+    <div class="set-row"><div><b>เพลงประกอบ</b><p>เพลงกล่อมเบา ๆ แบบกล่องดนตรี</p></div><button class="switch" type="button" role="switch" data-setting="music" aria-label="เพลงประกอบ"></button></div>
+    <div class="set-row"><div><b>เสียงเอฟเฟกต์</b><p>เสียงตอนวางแมว จดโน้ต และผ่านด่าน</p></div><button class="switch" type="button" role="switch" data-setting="sfx" aria-label="เสียงเอฟเฟกต์"></button></div>
+    <div class="set-row"><div><b>แสดงช่องต้องห้ามอัตโนมัติ</b><p>แรเงาช่องที่ชนกับแมวที่วางแล้ว</p></div><button class="switch" type="button" role="switch" data-setting="autoForbid" aria-label="แสดงช่องต้องห้าม"></button></div>
+    <div class="set-row"><div><b>ตรวจกับคำตอบทันที</b><p>เตือนเมื่อวางแมวผิดตำแหน่ง แม้ยังไม่ชนกฎ</p></div><button class="switch" type="button" role="switch" data-setting="strict" aria-label="ตรวจกับคำตอบทันที"></button></div>
+    <div class="set-row"><div><b>แผงดีบัก</b><p>ตรวจความถูกต้องของปริศนาและกระดาน</p></div><button class="switch" type="button" role="switch" data-setting="debug" aria-label="แผงดีบัก"></button></div>
+    <div class="row-btns"><button class="btn danger" type="button" id="btnReset">ล้างความคืบหน้าทั้งหมด</button><button class="btn primary" type="button" data-close>เสร็จสิ้น</button></div>
+  </div>
+</div>
+
+<div class="modal" id="winModal" aria-hidden="true">
+  <div class="sheet win" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+    <svg class="win-cat" viewBox="0 0 100 100" aria-hidden="true"><use href="#catHappy" xlink:href="#catHappy"/></svg>
+    <h2 id="winTitle">งีบสำเร็จ!</h2>
+    <p class="muted" id="winSub">แมวทุกตัวได้ที่นอนแสนสบาย</p>
+    <div class="stars" id="winStars" aria-label="ดาว"></div>
+    <div class="win-stats">
+      <div>เวลา<b id="wTime">0:00</b></div><div>ตาเดิน<b id="wMoves">0</b></div><div>พลาด<b id="wMist">0</b></div><div>คำใบ้<b id="wHints">0</b></div>
+    </div>
+    <details id="winExplain"><summary>ดูวิธีคิดของปริศนานี้ทีละขั้น</summary><p class="muted" id="winTech" style="margin:4px 0"></p><ol id="stepList"></ol></details>
+    <div class="row-btns"><button class="btn" type="button" data-close>ดูกระดาน</button><button class="btn" type="button" id="btnWinMenu">เลือกปริศนา</button><button class="btn primary" type="button" id="btnNext" data-autofocus>ด่านถัดไป</button></div>
+  </div>
+</div>
+
+<div class="modal" id="confirmModal" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cfTitle" style="max-width:380px">
+    <h2 id="cfTitle">ยืนยัน</h2><p id="cfText" style="margin:8px 0 0"></p>
+    <div class="row-btns"><button class="btn" type="button" data-close>ยกเลิก</button><button class="btn primary" type="button" id="cfOk" data-autofocus>ตกลง</button></div>
+  </div>
+</div>
+
+<div class="modal" id="loading" aria-hidden="true" data-static="1">
+  <div class="loader" role="alert" aria-busy="true">
+    <svg class="yarn"><use href="#yarn" xlink:href="#yarn"/></svg>
+    <p style="margin:8px 0 0;font-weight:700">กำลังเย็บผ้านวมลายใหม่…</p>
+    <p class="muted" style="margin:2px 0 0">ตรวจให้แน่ใจว่ามีคำตอบเดียว</p>
+  </div>
+</div>
+
+<aside id="debugPanel" hidden aria-label="แผงดีบัก">
+  <div class="dbg-head"><b>แผงดีบัก Catnap</b><button type="button" id="dbgClose">ปิด</button></div>
+  <div class="dbg-btns">
+    <button type="button" id="dbgRefresh">ตรวจใหม่</button>
+    <button type="button" id="dbgShowSol">แสดง/ซ่อนคำตอบ</button>
+    <button type="button" id="dbgSolve">ไขอัตโนมัติ</button>
+    <button type="button" id="dbgTest">รันชุดทดสอบ</button>
+  </div>
+  <pre id="dbgPuzzle"></pre><pre id="dbgBoard"></pre><pre id="dbgTests">ยังไม่ได้รันชุดทดสอบ</pre>
+</aside>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="errorBar" role="alert"><span id="errorText"></span><button type="button" id="errorClose">ปิด</button></div>
+<canvas id="confetti" aria-hidden="true"></canvas>
+
+<script>
+'use strict';
+/* =========================================================
+   ERROR HANDLING
+   ========================================================= */
+const $ = id => document.getElementById(id);
+function showError(msg){
+  try{ $('errorText').textContent = String(msg); $('errorBar').classList.add('show'); }catch(e){ alert(msg); }
+}
+window.addEventListener('error', e => showError('เกิดข้อผิดพลาด: ' + (e.message || e.error || 'ไม่ทราบสาเหตุ')));
+window.addEventListener('unhandledrejection', e => showError('เกิดข้อผิดพลาด: ' + ((e.reason && e.reason.message) || e.reason)));
+
+/* =========================================================
+   STORAGE
+   ========================================================= */
+const Store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ /* quota / private mode */ } },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+const KS = 'catnap.settings.v1', KP = 'catnap.progress.v1', KC = 'catnap.current.v1';
+const settings = Object.assign({music:false, sfx:true, autoForbid:true, strict:false, debug:false, seenTutorial:false, randSize:7, randDiff:1}, Store.get(KS, {}));
+const progress = Object.assign({unlocked:1, levels:{}, daily:{}, solved:0}, Store.get(KP, {}));
+const saveSettings = () => Store.set(KS, settings);
+const saveProgress = () => Store.set(KP, progress);
+
+/* =========================================================
+   CONSTANTS
+   ========================================================= */
+const REGION_COLORS = [
+  {c:'#f9c4d2', name:'ชมพู',          coat:'#f6a96b'},
+  {c:'#ffd5b5', name:'พีช',           coat:'#9a92a3'},
+  {c:'#f9e7a1', name:'เหลือง',         coat:'#fff1dc'},
+  {c:'#bfe9d2', name:'เขียวมินต์',      coat:'#f3b77d'},
+  {c:'#bcdcf4', name:'ฟ้า',           coat:'#5f5566', stripe:'rgba(255,255,255,.2)'},
+  {c:'#d8cbf2', name:'ม่วงลาเวนเดอร์',  coat:'#f6c58f'},
+  {c:'#b7e3e0', name:'เขียวอมฟ้า',      coat:'#c9b3a0'},
+  {c:'#ecd8c2', name:'น้ำตาลครีม',      coat:'#a7adb9'},
+  {c:'#f2c7e8', name:'บานเย็น',        coat:'#ffe7c7'}
+];
+const DIFF_NAMES = ['ง่าย', 'ปานกลาง', 'ยาก'];
+const SIZES = [5, 6, 7, 8, 9];
+const LEVEL_COUNT = 30;
+const DIRS4 = [[1,0],[-1,0],[0,1],[0,-1]];
+const TECH_NAMES = {single:'ช่องเดียวที่เหลือ', confine:'กักบริเวณ', attack:'กันพื้นที่', pair:'จับคู่สองกลุ่ม', multi:'กลุ่มหลายเขต', trial:'ลองสมมติหาข้อขัดแย้ง', reveal:'เปิดคำตอบ'};
+
+function levelSpec(L){
+  const t = [[5,0],[5,0],[5,1],[6,0],[6,0],[6,1],[6,1],[7,0],[7,1],[7,1],[7,2],[8,0],[8,1],[8,1],[8,2],[9,0],[9,1],[9,1],[9,2],[9,2]];
+  if(L <= t.length) return t[L-1];
+  return [(L % 2) ? 8 : 9, 2];
+}
+function dailySpec(d){ const t = [[7,2],[6,0],[6,1],[7,1],[7,1],[8,1],[8,2]]; return t[d.getDay()]; }
+function todayKey(d = new Date()){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+
+/* =========================================================
+   RNG
+   ========================================================= */
+function hashStr(s){ let h = 1779033703 ^ s.length; for(let i=0;i<s.length;i++){ h = Math.imul(h ^ s.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; }
+  return () => { h = Math.imul(h ^ h >>> 16, 2246822507); h = Math.imul(h ^ h >>> 13, 3266489909); return (h ^= h >>> 16) >>> 0; }; }
+function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function rngFromSeed(s){ return mulberry32(hashStr(String(s))()); }
+function shuffle(a, rng){ for(let i=a.length-1;i>0;i--){ const j = Math.floor(rng()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function popcount(x){ let c=0; while(x){ x &= x-1; c++; } return c; }
+
+/* =========================================================
+   GENERATION
+   ========================================================= */
+function randomSolution(n, rng){
+  const sol = new Array(n), used = new Array(n).fill(false);
+  function rec(r){
+    if(r === n) return true;
+    const cols = shuffle([...Array(n).keys()], rng);
+    for(const c of cols){
+      if(used[c]) continue;
+      if(r > 0 && Math.abs(c - sol[r-1]) <= 1) continue;
+      used[c] = true; sol[r] = c;
+      if(rec(r+1)) return true;
+      used[c] = false;
+    }
+    return false;
+  }
+  return rec(0) ? sol : null;
+}
+
+function growRegions(n, sol, rng){
+  const N = n*n, reg = new Array(N).fill(-1), size = new Array(n).fill(1);
+  const appetite = Array.from({length:n}, () => 0.4 + rng()*1.6);
+  for(let r=0;r<n;r++) reg[r*n + sol[r]] = r;
+  let left = N - n;
+  while(left > 0){
+    const cand = []; let total = 0;
+    for(let i=0;i<N;i++){
+      if(reg[i] !== -1) continue;
+      const r = (i/n)|0, c = i%n, seen = [];
+      for(const [dr,dc] of DIRS4){
+        const rr=r+dr, cc=c+dc; if(rr<0||cc<0||rr>=n||cc>=n) continue;
+        const g = reg[rr*n+cc];
+        if(g >= 0 && !seen.includes(g)){ seen.push(g); const w = appetite[g] / Math.pow(size[g], 0.9); cand.push([i,g,w]); total += w; }
+      }
+    }
+    let x = rng()*total, pick = cand[cand.length-1];
+    for(const cd of cand){ x -= cd[2]; if(x <= 0){ pick = cd; break; } }
+    reg[pick[0]] = pick[1]; size[pick[1]]++; left--;
+  }
+  return reg;
+}
+
+function regionConnected(n, reg, g){
+  const cells = []; for(let i=0;i<n*n;i++) if(reg[i] === g) cells.push(i);
+  if(!cells.length) return false;
+  const seen = new Set([cells[0]]), q = [cells[0]];
+  while(q.length){
+    const i = q.pop(), r = (i/n)|0, c = i%n;
+    for(const [dr,dc] of DIRS4){
+      const rr=r+dr, cc=c+dc; if(rr<0||cc<0||rr>=n||cc>=n) continue;
+      const j = rr*n+cc; if(reg[j] === g && !seen.has(j)){ seen.add(j); q.push(j); }
+    }
+  }
+  return seen.size === cells.length;
+}
+
+/* Exhaustive backtracking solver: counts solutions up to `limit`. */
+function solveCount(n, reg, limit){
+  const sols = [], cur = new Array(n); let count = 0;
+  function rec(r, colMask, regMask, prev){
+    if(r === n){ count++; if(sols.length < limit) sols.push(cur.slice()); return count >= limit; }
+    for(let c=0;c<n;c++){
+      if((colMask >> c) & 1) continue;
+      if(r > 0 && Math.abs(c - prev) <= 1) continue;
+      const g = reg[r*n+c]; if((regMask >> g) & 1) continue;
+      cur[r] = c;
+      if(rec(r+1, colMask | (1<<c), regMask | (1<<g), c)) return true;
+    }
+    return false;
+  }
+  rec(0, 0, 0, -9);
+  return {count, sols};
+}
+
+/* Reshape regions until the intended solution is the only one. */
+function makeUnique(n, reg, sol, rng){
+  for(let iter=0; iter < n*14; iter++){
+    const res = solveCount(n, reg, 2);
+    if(res.count === 1) return true;
+    if(res.count === 0) return false;
+    const alt = res.sols.find(s => s.some((c,r) => c !== sol[r]));
+    if(!alt) return false;
+    const opts = [];
+    for(let r=0;r<n;r++){
+      if(alt[r] === sol[r]) continue;
+      const i = r*n + alt[r], g = reg[i];
+      for(const [dr,dc] of DIRS4){
+        const rr=r+dr, cc=alt[r]+dc; if(rr<0||cc<0||rr>=n||cc>=n) continue;
+        const h = reg[rr*n+cc];
+        if(h !== g && !opts.some(o => o[0]===i && o[1]===h)) opts.push([i,h]);
+      }
+    }
+    shuffle(opts, rng);
+    let moved = false;
+    for(const [i,h] of opts){
+      const g = reg[i]; reg[i] = h;
+      if(regionConnected(n, reg, g)){ moved = true; break; }
+      reg[i] = g;
+    }
+    if(!moved) return false;
+  }
+  return false;
+}
+
+/* Guaranteed-unique backup: n-1 single-cell regions + one big region. */
+function fallbackPuzzle(n, rng){
+  for(let t=0;t<60;t++){
+    const sol = randomSolution(n, rng); if(!sol) continue;
+    const reg = new Array(n*n).fill(n-1);
+    for(let r=0;r<n-1;r++) reg[r*n+sol[r]] = r;
+    if(!regionConnected(n, reg, n-1)) continue;
+    const perm = shuffle([...Array(n).keys()], rng);
+    const regions = reg.map(g => perm[g]);
+    const ls = solveLogically(makeGeo(n, regions), sol);
+    return {n, regions, solution:sol, diff: rateLevel(ls.maxLevel), maxLevel: ls.maxLevel, stepCount: ls.steps.length, fallback:true};
+  }
+  throw new Error('สร้างปริศนาสำรองไม่สำเร็จ');
+}
+
+function rateLevel(maxLevel){ return maxLevel <= 2 ? 0 : maxLevel === 3 ? 1 : 2; }
+
+function generatePuzzle(n, diffTarget, seed){
+  const t0 = performance.now();
+  const rng = rngFromSeed(seed + '|' + n + '|' + diffTarget);
+  const maxAttempts = n >= 8 ? 24 : 36;
+  let best = null, bestScore = Infinity, attempts = 0;
+  for(let a=0; a<maxAttempts; a++){
+    attempts++;
+    const sol = randomSolution(n, rng); if(!sol) continue;
+    let reg = growRegions(n, sol, rng);
+    if(!makeUnique(n, reg, sol, rng)) continue;
+    const perm = shuffle([...Array(n).keys()], rng);
+    reg = reg.map(g => perm[g]);
+    const ls = solveLogically(makeGeo(n, reg), sol);
+    if(!ls.ok) continue;
+    const diff = rateLevel(ls.maxLevel);
+    const score = Math.abs(diff - diffTarget);
+    if(score < bestScore){ bestScore = score; best = {n, regions:reg, solution:sol, diff, maxLevel:ls.maxLevel, stepCount:ls.steps.length}; }
+    if(score === 0) break;
+  }
+  let fallback = false;
+  if(!best){ best = fallbackPuzzle(n, rng); fallback = true; }
+  let v = validatePuzzle(best);
+  if(!v.ok){
+    best = fallbackPuzzle(n, rng); fallback = true; v = validatePuzzle(best);
+    if(!v.ok) throw new Error('ไม่สามารถสร้างปริศนาที่ถูกต้องได้: ' + v.errors.join(', '));
+  }
+  return {puzzle:best, attempts, ms: Math.round(performance.now() - t0), fallback};
+}
+
+/* =========================================================
+   VALIDATION
+   ========================================================= */
+function validatePuzzle(p){
+  const errors = [];
+  if(!p || typeof p !== 'object') return {ok:false, errors:['ไม่มีข้อมูลปริศนา'], solutionCount:0};
+  const n = p.n;
+  if(!(Number.isInteger(n) && n >= 4 && n <= 10)) errors.push('ขนาดกระดานไม่ถูกต้อง');
+  if(!Array.isArray(p.regions) || p.regions.length !== n*n) errors.push('ข้อมูลเขตไม่ครบ');
+  if(errors.length) return {ok:false, errors, solutionCount:0};
+  const reg = p.regions, sizes = new Array(n).fill(0);
+  for(const g of reg){ if(!Number.isInteger(g) || g < 0 || g >= n){ errors.push('รหัสเขตไม่ถูกต้อง'); return {ok:false, errors, solutionCount:0}; } sizes[g]++; }
+  sizes.forEach((s,g) => { if(s === 0) errors.push('เขต ' + g + ' ไม่มีช่อง'); });
+  const contiguous = sizes.map((s,g) => s > 0 && regionConnected(n, reg, g));
+  contiguous.forEach((ok,g) => { if(!ok && sizes[g] > 0) errors.push('เขต ' + g + ' ไม่ต่อเนื่องกัน'); });
+  const sol = p.solution;
+  let solOk = Array.isArray(sol) && sol.length === n && sol.every(c => Number.isInteger(c) && c >= 0 && c < n);
+  if(solOk){
+    solOk = new Set(sol).size === n
+      && new Set(sol.map((c,r) => reg[r*n+c])).size === n
+      && sol.every((c,r) => r === 0 || Math.abs(c - sol[r-1]) > 1);
+  }
+  if(!solOk) errors.push('คำตอบที่บันทึกไว้ไม่ผ่านกฎ');
+  let cnt = {count:0, sols:[]};
+  if(!errors.length){
+    cnt = solveCount(n, reg, 2);
+    if(cnt.count === 0) errors.push('ปริศนาไม่มีคำตอบ');
+    else if(cnt.count > 1) errors.push('ปริศนามีคำตอบมากกว่าหนึ่งแบบ');
+    else if(!cnt.sols[0].every((c,r) => c === sol[r])) errors.push('คำตอบไม่ตรงกับตัวแก้ปริศนา');
+  }
+  return {ok: errors.length === 0, errors, solutionCount: cnt.count, contiguous, sizes, solOk};
+}
+
+/* =========================================================
+   GEOMETRY + LOGIC SOLVER (hints, explanations, rating)
+   ========================================================= */
+function makeGeo(n, reg){
+  const N = n*n, units = [];
+  for(let r=0;r<n;r++) units.push({type:'row', idx:r, cells:[]});
+  for(let c=0;c<n;c++) units.push({type:'col', idx:c, cells:[]});
+  for(let g=0;g<n;g++) units.push({type:'reg', idx:g, cells:[]});
+  const cellUnits = [];
+  for(let i=0;i<N;i++){
+    const r=(i/n)|0, c=i%n;
+    units[r].cells.push(i); units[n+c].cells.push(i); units[2*n+reg[i]].cells.push(i);
+    cellUnits.push([r, n+c, 2*n+reg[i]]);
+  }
+  const peerMask = [], peerList = [];
+  for(let i=0;i<N;i++){
+    const r=(i/n)|0, c=i%n, m = new Uint8Array(N), l = [];
+    for(let j=0;j<N;j++){
+      if(j === i) continue;
+      const r2=(j/n)|0, c2=j%n;
+      if(r2===r || c2===c || reg[j]===reg[i] || (Math.abs(r2-r)<=1 && Math.abs(c2-c)<=1)){ m[j]=1; l.push(j); }
+    }
+    peerMask.push(m); peerList.push(l);
+  }
+  const order = [];
+  for(let u=2*n;u<3*n;u++) order.push(u);
+  for(let u=0;u<2*n;u++) order.push(u);
+  return {n, N, reg, units, cellUnits, peerMask, peerList, order};
+}
+function unitName(geo, u){
+  const x = geo.units[u];
+  if(x.type === 'row') return 'แถวที่ ' + (x.idx+1);
+  if(x.type === 'col') return 'คอลัมน์ที่ ' + (x.idx+1);
+  return 'เขตสี' + REGION_COLORS[x.idx].name;
+}
+function cellName(geo, i){ const n = geo.n; return 'ช่อง (แถว ' + (((i/n)|0)+1) + ', คอลัมน์ ' + (i%n+1) + ')'; }
+function joinThai(arr){ if(arr.length <= 1) return arr.join(''); return arr.slice(0,-1).join(', ') + ' และ' + arr[arr.length-1]; }
+function cellsText(geo, list){
+  if(list.length <= 3) return joinThai(list.map(i => cellName(geo,i)));
+  return list.slice(0,3).map(i => cellName(geo,i)).join(', ') + ' และอีก ' + (list.length-3) + ' ช่อง';
+}
+
+function applyPlace(geo, st, i){ st[i] = 1; for(const p of geo.peerList[i]) if(st[p] === 0) st[p] = -1; }
+function applyStep(geo, st, s){
+  if(s.kind === 'place') for(const i of s.cells) applyPlace(geo, st, i);
+  else if(s.kind === 'elim') for(const i of s.cells) if(st[i] === 0) st[i] = -1;
+}
+function isSolved(geo, st){
+  for(let r=0;r<geo.n;r++){ let has=false; for(const i of geo.units[r].cells) if(st[i]===1){ has=true; break; } if(!has) return false; }
+  return true;
+}
+function unitInfo(geo, st){
+  return geo.units.map(u => { let cat=false; const unk=[]; for(const i of u.cells){ if(st[i]===1) cat=true; else if(st[i]===0) unk.push(i); } return {cat, unk}; });
+}
+
+const FAMILIES = [{g:'reg',t:'row'},{g:'reg',t:'col'},{g:'row',t:'reg'},{g:'col',t:'reg'}];
+function unitIdx(geo, type, cell){ const n=geo.n; if(type==='row') return (cell/n)|0; if(type==='col') return n + cell%n; return 2*n + geo.reg[cell]; }
+function baseOf(geo, type){ return type==='row' ? 0 : type==='col' ? geo.n : 2*geo.n; }
+
+function subsetStep(geo, st, info, kmin, kmax){
+  const n = geo.n;
+  const fams = FAMILIES.map(f => {
+    const gb = baseOf(geo, f.g), tb = baseOf(geo, f.t), G = [];
+    for(let u=gb; u<gb+n; u++) if(!info[u].cat) G.push(u);
+    const m = G.length;
+    const tm = G.map(u => { let mask=0; for(const c of info[u].unk) mask |= 1 << (unitIdx(geo, f.t, c) - tb); return mask; });
+    const full = 1 << m, uni = new Int32Array(full);
+    for(let s=1;s<full;s++){ const low = s & -s, j = 31 - Math.clz32(low); uni[s] = uni[s ^ low] | tm[j]; }
+    return {f, G, m, uni, tb};
+  });
+  for(let k=kmin; k<=kmax; k++){
+    for(const fd of fams){
+      const {f, G, m, uni, tb} = fd;
+      if(k >= m) continue;
+      for(let s=1; s < (1<<m); s++){
+        if(popcount(s) !== k || popcount(uni[s]) !== k) continue;
+        const inSub = new Set(); for(let j=0;j<m;j++) if((s>>j)&1) inSub.add(G[j]);
+        const targets = []; for(let t=0;t<n;t++) if((uni[s]>>t)&1) targets.push(tb+t);
+        const elim = [];
+        for(const tu of targets) for(const c of geo.units[tu].cells) if(st[c]===0 && !inSub.has(unitIdx(geo, f.g, c))) elim.push(c);
+        if(!elim.length) continue;
+        const gN = joinThai([...inSub].map(u => unitName(geo,u)));
+        const tN = joinThai(targets.map(u => unitName(geo,u)));
+        let text;
+        if(k === 1) text = 'ช่องที่ยังว่างทั้งหมดของ' + gN + 'อยู่ใน' + tN + ' แมวของ' + gN + 'จึงต้องอยู่ใน' + tN + ' ช่องอื่นใน' + tN + 'จึงวางแมวไม่ได้ (ตัดออก ' + elim.length + ' ช่อง)';
+        else text = gN + ' มีช่องว่างอยู่ใน' + tN + 'เท่านั้น แมว ' + k + ' ตัวของกลุ่มเหล่านี้จึงครอง' + tN + 'ไว้ทั้งหมด ช่องอื่นใน' + tN + 'จึงวางแมวไม่ได้ (ตัดออก ' + elim.length + ' ช่อง)';
+        return {kind:'elim', level: k===1 ? 2 : k===2 ? 3 : 4, tech: k===1 ? 'confine' : k===2 ? 'pair' : 'multi', cells:elim, units:[...inSub, ...targets], text};
+      }
+    }
+  }
+  return null;
+}
+
+function attackStep(geo, st, info){
+  for(const k of geo.order){
+    if(info[k].cat) continue;
+    const unk = info[k].unk; if(!unk.length) continue;
+    const elim = [];
+    for(let x=0;x<geo.N;x++){
+      if(st[x] !== 0 || geo.cellUnits[x].includes(k)) continue;
+      const pm = geo.peerMask[x]; let all = true;
+      for(const c of unk){ if(!pm[c]){ all=false; break; } }
+      if(all) elim.push(x);
+    }
+    if(elim.length){
+      const U = unitName(geo, k);
+      const text = elim.length === 1
+        ? 'ถ้าวางแมวที่' + cellName(geo, elim[0]) + ' แมวตัวนั้นจะกันทุกช่องที่เหลือของ' + U + ' จน' + U + 'ไม่มีที่ให้แมวเลย จึงตัดช่องนี้ออก'
+        : 'ถ้าวางแมวที่ช่องใดช่องหนึ่งใน ' + cellsText(geo, elim) + ' จะกันทุกช่องที่เหลือของ' + U + ' จน' + U + 'ไม่มีที่ให้แมวเลย จึงตัดช่องเหล่านี้ออก';
+      return {kind:'elim', level:3, tech:'attack', cells:elim, units:[k], text};
+    }
+  }
+  return null;
+}
+
+function trialStep(geo, st){
+  for(const lv of [2,3]){
+    for(let x=0;x<geo.N;x++){
+      if(st[x] !== 0) continue;
+      const s2 = Int8Array.from(st); applyPlace(geo, s2, x);
+      for(let g=0; g<200; g++){
+        if(isSolved(geo, s2)) break;
+        const s = findStep(geo, s2, lv);
+        if(!s) break;
+        if(s.kind === 'contra'){
+          return {kind:'elim', level:5, tech:'trial', cells:[x], units:[s.unit],
+            text:'ลองสมมติว่าวางแมวที่' + cellName(geo,x) + ' แล้วไล่เหตุผลต่อ จะพบว่า' + unitName(geo, s.unit) + 'ไม่เหลือช่องให้วางแมว ข้อสมมตินี้จึงผิด ตัดช่องนี้ออก'};
+        }
+        applyStep(geo, s2, s);
+      }
+    }
+  }
+  return null;
+}
+
+function findStep(geo, st, maxLevel){
+  const info = unitInfo(geo, st);
+  for(let k=0;k<info.length;k++) if(!info[k].cat && info[k].unk.length === 0) return {kind:'contra', level:0, unit:k};
+  for(const k of geo.order){
+    if(!info[k].cat && info[k].unk.length === 1){
+      const i = info[k].unk[0];
+      return {kind:'place', level:1, tech:'single', cells:[i], units:[k], text: unitName(geo,k) + 'เหลือช่องที่วางแมวได้เพียงช่องเดียว คือ' + cellName(geo,i) + ' จึงวางแมวที่นี่'};
+    }
+  }
+  if(maxLevel < 2) return null;
+  let s = subsetStep(geo, st, info, 1, 1); if(s) return s;
+  if(maxLevel < 3) return null;
+  s = attackStep(geo, st, info); if(s) return s;
+  s = subsetStep(geo, st, info, 2, 2); if(s) return s;
+  if(maxLevel < 4) return null;
+  s = subsetStep(geo, st, info, 3, geo.n); if(s) return s;
+  if(maxLevel < 5) return null;
+  return trialStep(geo, st);
+}
+
+function solveLogically(geo, sol){
+  const st = new Int8Array(geo.N), steps = []; let maxLevel = 0;
+  for(let g=0; g<600; g++){
+    if(isSolved(geo, st)) break;
+    const s = findStep(geo, st, 5);
+    if(!s || s.kind === 'contra') return {ok:false, steps, maxLevel};
+    applyStep(geo, st, s); steps.push(s); maxLevel = Math.max(maxLevel, s.level);
+  }
+  const ok = isSolved(geo, st) && sol.every((c,r) => st[r*geo.n + c] === 1);
+  return {ok, steps, maxLevel};
+}
+
+/* =========================================================
+   BOARD ANALYSIS (live constraints)
+   ========================================================= */
+function pairReason(geo, a, b){
+  const n = geo.n, ra=(a/n)|0, ca=a%n, rb=(b/n)|0, cb=b%n;
+  if(ra === rb) return 'row';
+  if(ca === cb) return 'col';
+  if(geo.reg[a] === geo.reg[b]) return 'reg';
+  if(Math.abs(ra-rb) <= 1 && Math.abs(ca-cb) <= 1) return 'touch';
+  return null;
+}
+function reasonText(geo, why, a){
+  if(why === 'row') return 'อยู่แถวเดียวกัน';
+  if(why === 'col') return 'อยู่คอลัมน์เดียวกัน';
+  if(why === 'reg') return 'อยู่ในเขตสี' + REGION_COLORS[geo.reg[a]].name + 'เดียวกัน';
+  return 'นอนติดกัน (ห้ามแตะกันแม้แนวทแยง)';
+}
+function analyzeBoard(geo, cells){
+  const n = geo.n, cats = [];
+  for(let i=0;i<geo.N;i++) if(cells[i] === 1) cats.push(i);
+  const rowC = new Array(n).fill(0), colC = new Array(n).fill(0), regC = new Array(n).fill(0);
+  for(const i of cats){ rowC[(i/n)|0]++; colC[i%n]++; regC[geo.reg[i]]++; }
+  const conflict = new Set(), pairs = [];
+  for(let x=0;x<cats.length;x++) for(let y=x+1;y<cats.length;y++){
+    const why = pairReason(geo, cats[x], cats[y]);
+    if(why){ conflict.add(cats[x]); conflict.add(cats[y]); pairs.push({a:cats[x], b:cats[y], why}); }
+  }
+  const forbidden = new Uint8Array(geo.N);
+  for(const i of cats) for(const p of geo.peerList[i]) forbidden[p] = 1;
+  const complete = cats.length === n && pairs.length === 0 && rowC.every(v=>v===1) && colC.every(v=>v===1) && regC.every(v=>v===1);
+  return {cats, rowC, colC, regC, conflict, pairs, forbidden, complete};
+}
+
+/* =========================================================
+   SOUND (WebAudio, no assets)
+   ========================================================= */
+const Sound = {
+  ctx:null, sfxG:null, musG:null, timer:null, step:0, next:0,
+  init(){
+    if(this.ctx){ if(this.ctx.state === 'suspended') this.ctx.resume().catch(()=>{}); return true; }
+    const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return false;
+    try{
+      this.ctx = new AC();
+      const master = this.ctx.createGain(); master.gain.value = 0.8; master.connect(this.ctx.destination);
+      this.sfxG = this.ctx.createGain(); this.sfxG.gain.value = 0.7; this.sfxG.connect(master);
+      this.musG = this.ctx.createGain(); this.musG.gain.value = 0; this.musG.connect(master);
+      return true;
+    }catch(e){ this.ctx = null; return false; }
+  },
+  tone(freq, dur, o = {}){
+    const c = this.ctx; if(!c) return;
+    const t = o.at != null ? o.at : c.currentTime + (o.delay || 0);
+    const osc = c.createOscillator(), g = c.createGain();
+    osc.type = o.type || 'sine'; osc.frequency.setValueAtTime(freq, t);
+    if(o.glide) osc.frequency.exponentialRampToValueAtTime(o.glide, t + dur);
+    const v = o.vol || 0.2;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + (o.attack || 0.012)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g); g.connect(o.dest || this.sfxG); osc.start(t); osc.stop(t + dur + 0.05);
+  },
+  play(name){
+    if(!settings.sfx || !this.init()) return;
+    try{
+      switch(name){
+        case 'place': this.tone(520,.14,{glide:880,vol:.22}); this.tone(1046,.1,{type:'triangle',vol:.07,delay:.06}); break;
+        case 'remove': this.tone(620,.13,{glide:330,vol:.15}); break;
+        case 'mark': this.tone(1250,.05,{type:'triangle',vol:.08}); break;
+        case 'erase': this.tone(820,.05,{vol:.06}); break;
+        case 'error': this.tone(233,.16,{type:'square',vol:.05}); this.tone(196,.22,{type:'square',vol:.05,delay:.12}); break;
+        case 'hint': [784,988,1175].forEach((f,i)=>this.tone(f,.25,{type:'triangle',vol:.08,delay:i*.08})); break;
+        case 'click': this.tone(900,.04,{type:'triangle',vol:.05}); break;
+        case 'win': [523,659,784,1047,1319].forEach((f,i)=>this.tone(f,.4,{type:'triangle',vol:.12,delay:i*.11})); [523,659,784].forEach(f=>this.tone(f,1.2,{vol:.05,delay:.6})); break;
+      }
+    }catch(e){}
+  },
+  startMusic(){
+    if(!this.init() || this.timer) return;
+    const c = this.ctx;
+    this.musG.gain.cancelScheduledValues(c.currentTime);
+    this.musG.gain.setTargetAtTime(0.55, c.currentTime, 0.6);
+    this.next = c.currentTime + 0.15; this.step = 0;
+    this.timer = setInterval(() => this.schedule(), 180);
+  },
+  stopMusic(){
+    if(this.timer){ clearInterval(this.timer); this.timer = null; }
+    if(this.ctx && this.musG) this.musG.gain.setTargetAtTime(0, this.ctx.currentTime, 0.3);
+  },
+  schedule(){
+    const F = {G3:196,A3:220,B3:246.94,C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392,A4:440,B4:493.88,C5:523.25,D5:587.33,E5:659.25,G5:783.99};
+    const CH = [['C4','E4','G4'],['A3','C4','E4'],['F4','A4','C5'],['G3','B3','D4']];
+    const MEL = ['E5','G5','E5','D5','C5',null,'D5','E5','A4','C5','E5','C5','A4',null,null,null,'A4','C5','A4','G4','A4','C5','D5',null,'G4','B4','D5','B4','D5','C5','B4',null];
+    const beat = 0.42, c = this.ctx;
+    while(this.next < c.currentTime + 0.7){
+      const s = this.step % 32;
+      if(s % 8 === 0) for(const nn of CH[(s/8)|0]) this.tone(F[nn]/2, beat*8, {vol:.03, at:this.next, attack:.4, dest:this.musG});
+      const m = MEL[s];
+      if(m){ this.tone(F[m], .55, {type:'triangle', vol:.05, at:this.next, dest:this.musG}); this.tone(F[m]*2, .35, {vol:.012, at:this.next, dest:this.musG}); }
+      this.next += beat; this.step++;
+    }
+  }
+};
+
+/* =========================================================
+   CONFETTI
+   ========================================================= */
+const Confetti = {
+  run(){
+    const cv = $('confetti'), ctx = cv.getContext('2d'); if(!ctx) return;
+    const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const dpr = Math.min(2, window.devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+    cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+    const cols = ['#f493b1','#f7d474','#86d3b0','#8cc5ea','#c9b2f0','#ffb38a'];
+    const P = Array.from({length: reduce ? 30 : 130}, () => ({x:Math.random()*W, y:-20-Math.random()*H*.5, vx:(Math.random()-.5)*2.4, vy:2+Math.random()*3.2,
+      r:5+Math.random()*7, a:Math.random()*6.28, va:(Math.random()-.5)*.2, t:Math.floor(Math.random()*3), c:cols[Math.floor(Math.random()*cols.length)]}));
+    const t0 = performance.now();
+    const frame = now => {
+      ctx.clearRect(0,0,W,H);
+      for(const p of P){
+        p.x += p.vx; p.y += p.vy; p.vy += 0.03; p.a += p.va;
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.a); ctx.fillStyle = p.c;
+        if(p.t === 0){ ctx.beginPath(); ctx.ellipse(0,p.r*.3,p.r*.7,p.r*.55,0,0,6.28); ctx.fill();
+          for(const [dx,dy] of [[-.7,-.4],[-.25,-.8],[.25,-.8],[.7,-.4]]){ ctx.beginPath(); ctx.arc(dx*p.r,dy*p.r,p.r*.25,0,6.28); ctx.fill(); } }
+        else if(p.t === 1){ const s = p.r*.12; ctx.beginPath(); ctx.moveTo(0,3*s); ctx.bezierCurveTo(-6*s,-2*s,-3*s,-7*s,0,-3*s); ctx.bezierCurveTo(3*s,-7*s,6*s,-2*s,0,3*s); ctx.fill(); }
+        else { ctx.fillRect(-p.r*.5,-p.r*.25,p.r,p.r*.5); }
+        ctx.restore();
+      }
+      if(now - t0 < 3600) requestAnimationFrame(frame); else ctx.clearRect(0,0,W,H);
+    };
+    requestAnimationFrame(frame);
+  }
+};
+
+/* =========================================================
+   GAME STATE
+   ========================================================= */
+const board = $('board'), boardWrap = $('boardWrap');
+const G = {puzzle:null, geo:null, solSet:null, cells:[], history:[], moves:0, mistakes:0, hints:0, elapsed:0, lastTick:performance.now(),
+  completed:false, mode:'cat', sel:-1, wrong:new Set(), hl:null, hlTimer:null, analysis:null, validation:null, genInfo:null, logic:null,
+  showSol:false, debugSolved:false};
+let cellEls = [];
+
+function fmtTime(ms){ const s = Math.floor(ms/1000), h = Math.floor(s/3600), m = Math.floor(s/60)%60, x = s%60;
+  return (h ? h + ':' + String(m).padStart(2,'0') : m) + ':' + String(x).padStart(2,'0'); }
+
+function puzzleLabel(p){
+  const sz = p.n + '×' + p.n + ' · ' + DIFF_NAMES[p.diff];
+  if(p.kind === 'level') return 'ด่าน ' + p.level + ' · ' + sz;
+  if(p.kind === 'daily'){
+    let d = p.date; try{ const [y,mo,da] = p.date.split('-').map(Number); d = new Date(y,mo-1,da).toLocaleDateString('th-TH',{day:'numeric',month:'short'}); }catch(e){}
+    return 'ประจำวัน ' + d + ' · ' + sz;
+  }
+  return 'ปริศนาสุ่ม · ' + sz;
+}
+
+function buildBoard(){
+  const p = G.puzzle, n = p.n, reg = p.regions;
+  board.textContent = '';
+  board.style.setProperty('--n', n);
+  cellEls = [];
+  const NS = 'http://www.w3.org/2000/svg', XL = 'http://www.w3.org/1999/xlink';
+  const frag = document.createDocumentFragment();
+  for(let i=0;i<n*n;i++){
+    const r = (i/n)|0, c = i%n, g = reg[i], col = REGION_COLORS[g];
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'cell'; b.dataset.i = i; b.tabIndex = -1; b.setAttribute('role','gridcell');
+    b.style.setProperty('--rc', col.c); b.style.setProperty('--coat', col.coat);
+    if(col.stripe) b.style.setProperty('--stripe', col.stripe);
+    b.style.setProperty('--d', (r + c) * 70);
+    const sh = ['inset 0 0 0 .5px rgba(74,54,64,.16)'];
+    if(r > 0 && reg[i-n] !== g){ b.classList.add('bt'); sh.push('inset 0 2px 0 0 var(--seam)'); }
+    if(c < n-1 && reg[i+1] !== g){ b.classList.add('br'); sh.push('inset -2px 0 0 0 var(--seam)'); }
+    if(r < n-1 && reg[i+n] !== g){ b.classList.add('bb'); sh.push('inset 0 -2px 0 0 var(--seam)'); }
+    if(c > 0 && reg[i-1] !== g){ b.classList.add('bl'); sh.push('inset 2px 0 0 0 var(--seam)'); }
+    b.style.boxShadow = sh.join(',');
+    if(i === 0) b.style.borderTopLeftRadius = '11px';
+    if(i === n-1) b.style.borderTopRightRadius = '11px';
+    if(i === n*(n-1)) b.style.borderBottomLeftRadius = '11px';
+    if(i === n*n-1) b.style.borderBottomRightRadius = '11px';
+    const fb = document.createElement('span'); fb.className = 'fb';
+    const x = document.createElement('span'); x.className = 'x';
+    const dot = document.createElement('span'); dot.className = 'dot';
+    const ds = document.createElementNS(NS,'svg'); const du = document.createElementNS(NS,'use');
+    du.setAttribute('href','#paw'); du.setAttributeNS(XL,'xlink:href','#paw'); ds.appendChild(du); dot.appendChild(ds);
+    const cs = document.createElementNS(NS,'svg'); cs.setAttribute('class','cat-svg'); cs.setAttribute('viewBox','0 0 100 100');
+    const cu = document.createElementNS(NS,'use'); cu.setAttribute('href','#cat'); cu.setAttributeNS(XL,'xlink:href','#cat'); cs.appendChild(cu);
+    const burst = document.createElement('span'); burst.className = 'burst';
+    const ring = document.createElement('span'); ring.className = 'ring';
+    b.append(fb, x, dot, cs, burst, ring);
+    frag.appendChild(b); cellEls.push(b);
+  }
+  board.appendChild(frag);
+}
+
+function fitBoard(){
+  if(!G.puzzle) return;
+  const rc = boardWrap.getBoundingClientRect(), n = G.puzzle.n, pad = 5;
+  const s = Math.max(150, Math.min(rc.width, rc.height, 760) - 6);
+  const cs = Math.max(18, Math.floor((s - 2*pad) / n));
+  const size = cs*n + 2*pad;
+  board.style.width = size + 'px'; board.style.height = size + 'px';
+  board.style.setProperty('--cs', cs + 'px');
+}
+
+function renderBoard(){
+  if(!G.puzzle) return;
+  const a = analyzeBoard(G.geo, G.cells); G.analysis = a;
+  const n = G.puzzle.n, hl = G.hl;
+  for(let i=0;i<cellEls.length;i++){
+    const el = cellEls[i], v = G.cells[i], cl = el.classList;
+    cl.toggle('is-cat', v === 1); cl.toggle('is-x', v === 2); cl.toggle('is-dot', v === 3);
+    cl.toggle('is-forbid', settings.autoForbid && v !== 1 && a.forbidden[i] === 1);
+    cl.toggle('is-conflict', a.conflict.has(i)); cl.toggle('is-wrong', v === 1 && G.wrong.has(i));
+    cl.toggle('is-sel', i === G.sel); cl.toggle('is-sol', G.solSet.has(i));
+    cl.toggle('is-hint', !!(hl && hl.cells.has(i))); cl.toggle('is-hunit', !!(hl && hl.unit.has(i)));
+    const r = (i/n)|0, c = i%n;
+    el.setAttribute('aria-label', 'แถว ' + (r+1) + ' คอลัมน์ ' + (c+1) + ' เขตสี' + REGION_COLORS[G.puzzle.regions[i]].name + ': ' +
+      (v === 1 ? 'มีแมว' : v === 2 ? 'กากบาท' : v === 3 ? 'รอยเท้า' : (a.forbidden[i] ? 'ห้ามวาง' : 'ว่าง')));
+  }
+  board.classList.toggle('focusing', !!hl);
+  board.classList.toggle('show-sol', G.showSol);
+  board.classList.toggle('note', G.mode === 'note');
+  $('sMoves').textContent = G.moves; $('sMist').textContent = G.mistakes;
+  $('sCats').textContent = a.cats.length + '/' + n;
+  $('btnUndo').disabled = !G.history.length || G.completed;
+  $('btnHint').disabled = G.completed;
+  refreshDebug();
+}
+
+function setMessage(text, type = 'info'){ const m = $('message'); m.className = type; $('msgText').textContent = text; }
+let toastT = null;
+function toast(t){ const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 1900); }
+
+function setHighlight(cells, unitCells){
+  clearTimeout(G.hlTimer);
+  G.hl = {cells: new Set(cells), unit: new Set(unitCells.length ? unitCells : cells)};
+  G.hlTimer = setTimeout(() => { G.hl = null; renderBoard(); }, 4200);
+}
+function clearHighlight(){ if(G.hl){ clearTimeout(G.hlTimer); G.hl = null; } }
+
+function updateModeUI(){
+  const note = G.mode === 'note';
+  const use = $('modeIcon'), id = note ? '#i-pencil' : '#cat';
+  use.setAttribute('href', id); use.setAttributeNS('http://www.w3.org/1999/xlink','xlink:href', id);
+  $('modeLabel').textContent = note ? 'จดโน้ต' : 'วางแมว';
+  $('btnMode').classList.toggle('note', note);
+  $('btnMode').setAttribute('aria-pressed', note ? 'true' : 'false');
+}
+
+/* ---------- load / save ---------- */
+function loadPuzzle(p, state){
+  const v = validatePuzzle(p);
+  if(!v.ok) throw new Error('ปริศนาไม่ผ่านการตรวจสอบ: ' + v.errors.join(', '));
+  G.puzzle = p; G.validation = v; G.geo = makeGeo(p.n, p.regions);
+  G.solSet = new Set(p.solution.map((c,r) => r*p.n + c));
+  G.logic = null;
+  if(p.diff == null || p.maxLevel == null){ const ls = solveLogically(G.geo, p.solution); p.diff = rateLevel(ls.maxLevel); p.maxLevel = ls.maxLevel; G.logic = ls; }
+  const N = p.n*p.n;
+  const okCells = state && Array.isArray(state.cells) && state.cells.length === N && state.cells.every(x => x===0||x===1||x===2||x===3);
+  G.cells = okCells ? state.cells.slice() : new Array(N).fill(0);
+  G.history = okCells && Array.isArray(state.history) ? state.history.filter(h => h && Array.isArray(h.changes)) : [];
+  G.moves = okCells ? (state.moves|0) : 0; G.mistakes = okCells ? (state.mistakes|0) : 0; G.hints = okCells ? (state.hints|0) : 0;
+  G.elapsed = okCells ? (+state.elapsed || 0) : 0; G.completed = okCells ? !!state.completed : false;
+  G.wrong = new Set(okCells && Array.isArray(state.wrong) ? state.wrong : []);
+  G.mode = okCells && state.mode === 'note' ? 'note' : 'cat';
+  G.debugSolved = okCells ? !!state.debugSolved : false;
+  G.sel = -1; clearHighlight(); G.lastTick = performance.now();
+  board.classList.remove('won');
+  buildBoard(); fitBoard(); updateModeUI();
+  $('puzzleLabel').textContent = puzzleLabel(p);
+  $('sTime').textContent = fmtTime(G.elapsed);
+  renderBoard();
+  if(G.completed){ board.classList.add('won'); setMessage('ปริศนานี้ไขสำเร็จแล้ว เลือกปริศนาใหม่ได้จากปุ่ม "ปริศนา"', 'win'); }
+  else setMessage('วางแมว 1 ตัวในทุกแถว ทุกคอลัมน์ และทุกเขตสี โดยห้ามให้แมวนอนติดกัน', 'info');
+  saveNow();
+}
+function saveNow(){
+  if(!G.puzzle) return;
+  const p = G.puzzle;
+  Store.set(KC, {v:1, puzzle:{n:p.n, regions:p.regions, solution:p.solution, seed:p.seed, kind:p.kind, level:p.level, date:p.date, diff:p.diff, diffTarget:p.diffTarget, maxLevel:p.maxLevel},
+    cells:G.cells, moves:G.moves, mistakes:G.mistakes, hints:G.hints, elapsed:Math.round(G.elapsed), completed:G.completed, mode:G.mode,
+    wrong:[...G.wrong], history:G.history.slice(-150), debugSolved:G.debugSolved});
+}
+let saveT = null;
+function saveSoon(){ clearTimeout(saveT); saveT = setTimeout(saveNow, 400); }
+
+/* ---------- starting puzzles ---------- */
+function showLoading(on){ const m = $('loading'); m.classList.toggle('open', on); m.setAttribute('aria-hidden', on ? 'false' : 'true'); }
+function startGenerated(spec){
+  closeModal('menuModal'); closeModal('winModal');
+  showLoading(true);
+  setTimeout(() => {
+    let res;
+    try{ res = generatePuzzle(spec.n, spec.d, spec.seed); }
+    catch(e){
+      showError('สร้างปริศนาไม่สำเร็จ (' + e.message + ') — ใช้ปริศนาสำรองแทน');
+      try{ res = {puzzle: fallbackPuzzle(spec.n, rngFromSeed(spec.seed + '|fb')), attempts:0, ms:0, fallback:true}; }
+      catch(e2){ showLoading(false); showError('ไม่สามารถสร้างปริศนาได้: ' + e2.message); return; }
+    }
+    const p = Object.assign(res.puzzle, {kind:spec.kind, level:spec.level || null, date:spec.date || null, seed:spec.seed, diffTarget:spec.d});
+    try{ loadPuzzle(p, null); G.genInfo = res; refreshDebug(); }
+    catch(e){ showError('โหลดปริศนาไม่สำเร็จ: ' + e.message); }
+    showLoading(false);
+  }, 60);
+}
+function startLevel(L){
+  L = Math.max(1, Math.min(L, LEVEL_COUNT));
+  if(G.puzzle && G.puzzle.kind === 'level' && G.puzzle.level === L && !G.completed){ closeModal('menuModal'); return; }
+  const [n,d] = levelSpec(L);
+  startGenerated({kind:'level', level:L, n, d, seed:'catnap-level-' + L});
+}
+function startDaily(){
+  const key = todayKey();
+  if(G.puzzle && G.puzzle.kind === 'daily' && G.puzzle.date === key && !G.completed){ closeModal('menuModal'); return; }
+  const [n,d] = dailySpec(new Date());
+  startGenerated({kind:'daily', date:key, n, d, seed:'catnap-daily-' + key});
+}
+function startRandom(){
+  startGenerated({kind:'random', n:settings.randSize, d:settings.randDiff, seed:'rnd-' + Date.now() + '-' + Math.floor(Math.random()*1e9)});
+}
+
+/* ---------- actions ---------- */
+function commit(changes){
+  for(const ch of changes) G.cells[ch.i] = ch.to;
+  G.history.push({changes});
+  if(G.history.length > 300) G.history.shift();
+  G.moves++;
+}
+function popCell(i){ const el = cellEls[i]; if(!el) return; el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); setTimeout(() => el.classList.remove('pop'), 600); }
+
+function onCellTap(i, mode){
+  if(!G.puzzle) return;
+  mode = mode || G.mode;
+  if(G.completed){ toast('ปริศนานี้ไขสำเร็จแล้ว'); return; }
+  Sound.init(); clearHighlight();
+  G.sel = i;
+  const v = G.cells[i]; let to;
+  if(mode === 'cat') to = v === 1 ? 0 : 1;
+  else {
+    if(v === 1){ toast('ช่องนี้มีแมวอยู่ สลับเป็นโหมดวางแมวเพื่อเอาออก'); renderBoard(); return; }
+    to = v === 0 ? 2 : v === 2 ? 3 : 0;
+  }
+  commit([{i, from:v, to}]);
+  if(to === 1){ renderBoard(); afterPlace(i); }
+  else {
+    if(v === 1){ G.wrong.delete(i); Sound.play('remove'); setMessage('เอาแมวออกแล้ว', 'info'); }
+    else Sound.play(to === 0 ? 'erase' : 'mark');
+    renderBoard();
+  }
+  checkWin(); saveSoon();
+}
+
+function afterPlace(i){
+  popCell(i);
+  const a = G.analysis, mine = a.pairs.filter(p => p.a === i || p.b === i);
+  if(mine.length){
+    G.mistakes++; Sound.play('error');
+    const pr = mine[0], other = pr.a === i ? pr.b : pr.a;
+    setMessage('อุ๊ย! แมวตัวนี้กับแมวที่' + cellName(G.geo, other) + ' ' + reasonText(G.geo, pr.why, i), 'error');
+  } else if(settings.strict && !G.solSet.has(i)){
+    G.mistakes++; G.wrong.add(i); Sound.play('error');
+    setMessage('แมวตัวนี้ไม่ได้อยู่ในคำตอบ ลองคิดใหม่อีกครั้งนะ', 'error');
+  } else {
+    Sound.play('place');
+    const left = G.puzzle.n - a.cats.length;
+    setMessage(left > 0 ? 'แมวได้ที่งีบแล้ว เหลืออีก ' + left + ' ตัว' : 'ครบทุกตัวแล้ว!', 'info');
+  }
+  renderBoard();
+}
+
+function undo(){
+  if(G.completed || !G.history.length) return;
+  const h = G.history.pop();
+  for(let k=h.changes.length-1;k>=0;k--){ const ch = h.changes[k]; G.cells[ch.i] = ch.from; if(ch.from !== 1) G.wrong.delete(ch.i); }
+  clearHighlight(); Sound.play('click');
+  setMessage('ย้อนกลับ 1 ขั้นแล้ว', 'info');
+  renderBoard(); saveSoon();
+}
+
+function restart(){
+  const N = G.puzzle.n*G.puzzle.n;
+  G.cells = new Array(N).fill(0); G.history = []; G.moves = 0; G.mistakes = 0; G.hints = 0; G.elapsed = 0;
+  G.completed = false; G.wrong = new Set(); G.sel = -1; G.debugSolved = false; clearHighlight();
+  board.classList.remove('won');
+  setMessage('เริ่มใหม่แล้ว ค่อย ๆ คิดทีละขั้นนะ', 'info');
+  renderBoard(); saveNow();
+}
+
+function doHint(){
+  if(!G.puzzle || G.completed) return;
+  const geo = G.geo, n = geo.n, cells = G.cells;
+  Sound.play('hint');
+  for(let i=0;i<geo.N;i++){
+    if(cells[i] === 1 && !G.solSet.has(i)){
+      commit([{i, from:1, to:0}]); G.wrong.delete(i); G.hints++;
+      setHighlight([i], []);
+      setMessage('คำใบ้: แมวที่' + cellName(geo,i) + 'วางผิดตำแหน่ง เลยอุ้มออกให้แล้ว', 'hint');
+      renderBoard(); saveSoon(); return;
+    }
+  }
+  for(let i=0;i<geo.N;i++){
+    if(cells[i] === 2 && G.solSet.has(i)){
+      commit([{i, from:2, to:0}]); G.hints++;
+      setHighlight([i], []);
+      setMessage('คำใบ้: เครื่องหมาย ✕ ที่' + cellName(geo,i) + 'ไม่ถูกต้อง ช่องนี้ยังเป็นไปได้ จึงลบออกให้', 'hint');
+      renderBoard(); saveSoon(); return;
+    }
+  }
+  const st = new Int8Array(geo.N);
+  for(let i=0;i<geo.N;i++) if(cells[i] === 1) applyPlace(geo, st, i);
+  for(let i=0;i<geo.N;i++) if(cells[i] === 2 && st[i] === 0) st[i] = -1;
+  let step = findStep(geo, st, 5);
+  if(!step || step.kind === 'contra'){
+    let r = 0; for(; r<n; r++){ if(!geo.units[r].cells.some(i => st[i] === 1)) break; }
+    if(r >= n) return;
+    const i = r*n + G.puzzle.solution[r];
+    step = {kind:'place', level:6, tech:'reveal', cells:[i], units:[r], text:'คำใบ้พิเศษ: ' + cellName(geo,i) + ' คือตำแหน่งของแมวในคำตอบ'};
+  }
+  const changes = [];
+  if(step.kind === 'place') for(const i of step.cells){ if(cells[i] !== 1) changes.push({i, from:cells[i], to:1}); }
+  else for(const i of step.cells){ if(cells[i] === 0 || cells[i] === 3) changes.push({i, from:cells[i], to:2}); }
+  if(changes.length) commit(changes);
+  G.hints++;
+  const unitCells = []; for(const u of step.units) unitCells.push(...geo.units[u].cells);
+  setHighlight(step.cells, unitCells);
+  setMessage('คำใบ้: ' + step.text, 'hint');
+  if(step.kind === 'place') step.cells.forEach(popCell);
+  renderBoard(); checkWin(); saveSoon();
+}
+
+function calcStars(){ const x = G.mistakes + G.hints; return x === 0 ? 3 : x <= 2 ? 2 : 1; }
+
+function checkWin(){
+  if(G.completed || !G.analysis || !G.analysis.complete) return;
+  const geo = G.geo, sol = G.puzzle.solution;
+  const matches = sol.every((c,r) => G.cells[r*geo.n + c] === 1);
+  if(!matches) showError('คำตอบผ่านกฎแต่ไม่ตรงกับคำตอบที่บันทึกไว้ (ไม่ควรเกิดขึ้น) — โปรดเปิดแผงดีบัก');
+  G.completed = true; G.sel = -1; clearHighlight();
+  const stars = calcStars(), p = G.puzzle, t = Math.round(G.elapsed);
+  if(!G.debugSolved){
+    progress.solved = (progress.solved|0) + 1;
+    if(p.kind === 'level'){
+      const rec = progress.levels[p.level] || {};
+      progress.levels[p.level] = {time: rec.time ? Math.min(rec.time, t) : t, stars: Math.max(rec.stars || 0, stars)};
+      progress.unlocked = Math.max(progress.unlocked, Math.min(LEVEL_COUNT, p.level + 1));
+    } else if(p.kind === 'daily'){
+      const rec = progress.daily[p.date] || {};
+      progress.daily[p.date] = {time: rec.time ? Math.min(rec.time, t) : t, stars: Math.max(rec.stars || 0, stars)};
+    }
+    saveProgress();
+  }
+  board.classList.add('won');
+  Sound.play('win'); Confetti.run();
+  setMessage('เยี่ยมมาก! แมวทุกตัวได้ที่งีบแสนสบายแล้ว', 'win');
+  renderBoard(); saveNow();
+  setTimeout(openWin, 1000);
+}
+
+function openWin(){
+  const p = G.puzzle, stars = calcStars();
+  $('wTime').textContent = fmtTime(G.elapsed); $('wMoves').textContent = G.moves; $('wMist').textContent = G.mistakes; $('wHints').textContent = G.hints;
+  const ws = $('winStars'); ws.textContent = '';
+  for(let k=0;k<3;k++){ const s = document.createElement('span'); s.textContent = '★'; if(k >= stars) s.className = 'dim'; ws.appendChild(s); }
+  ws.setAttribute('aria-label', stars + ' ดาว');
+  $('winSub').textContent = puzzleLabel(p) + (G.debugSolved ? ' (ไขด้วยแผงดีบัก)' : '');
+  if(!G.logic) G.logic = solveLogically(G.geo, p.solution);
+  const ls = G.logic, list = $('stepList'); list.textContent = '';
+  const counts = {};
+  ls.steps.forEach(s => { counts[s.tech] = (counts[s.tech] || 0) + 1; });
+  $('winTech').textContent = 'ปริศนานี้ไขได้ใน ' + ls.steps.length + ' ขั้น โดยใช้เทคนิค: ' +
+    Object.keys(counts).map(k => TECH_NAMES[k] + ' ×' + counts[k]).join(' · ');
+  const NS = 'http://www.w3.org/2000/svg';
+  ls.steps.forEach(s => {
+    const li = document.createElement('li'), b = document.createElement('span');
+    b.className = 'badge ' + (s.kind === 'place' ? 'place' : 'elim');
+    if(s.kind === 'place'){ const sv = document.createElementNS(NS,'svg'); sv.setAttribute('viewBox','0 0 100 100'); const u = document.createElementNS(NS,'use'); u.setAttribute('href','#cat'); u.setAttributeNS('http://www.w3.org/1999/xlink','xlink:href','#cat'); sv.appendChild(u); b.appendChild(sv); }
+    else b.textContent = '✕';
+    const tx = document.createElement('span'); tx.textContent = s.text;
+    li.append(b, tx); list.appendChild(li);
+  });
+  $('winExplain').open = false;
+  const next = $('btnNext');
+  if(p.kind === 'level' && p.level < LEVEL_COUNT) next.textContent = 'ด่านถัดไป';
+  else if(p.kind === 'random') next.textContent = 'สุ่มปริศนาใหม่';
+  else next.textContent = 'เลือกปริศนา';
+  openModal('winModal');
+}
+
+/* =========================================================
+   MODALS & MENU
+   ========================================================= */
+function openModal(id){
+  const m = $(id); m.classList.add('open'); m.setAttribute('aria-hidden','false');
+  if(id === 'menuModal') refreshMenu();
+  if(id === 'settingsModal') applySettingsUI();
+  const f = m.querySelector('[data-autofocus]') || m.querySelector('button');
+  if(f) setTimeout(() => { try{ f.focus({preventScroll:true}); }catch(e){} }, 60);
+}
+function closeModal(id){
+  const m = $(id); if(!m.classList.contains('open')) return;
+  m.classList.remove('open'); m.setAttribute('aria-hidden','true');
+  if(id === 'tutorialModal' && !settings.seenTutorial){ settings.seenTutorial = true; saveSettings(); }
+}
+function anyModalOpen(){ return !!document.querySelector('.modal.open'); }
+let confirmCb = null;
+function askConfirm(title, text, cb){ $('cfTitle').textContent = title; $('cfText').textContent = text; confirmCb = cb; openModal('confirmModal'); }
+
+function buildMenu(){
+  const grid = $('levelGrid');
+  for(let L=1; L<=LEVEL_COUNT; L++){
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'lv'; b.dataset.level = L;
+    const num = document.createElement('span'); num.textContent = L;
+    const sm = document.createElement('small');
+    b.append(num, sm); grid.appendChild(b);
+  }
+  grid.addEventListener('click', e => { const b = e.target.closest('.lv'); if(b && !b.disabled){ Sound.play('click'); startLevel(+b.dataset.level); } });
+  const sc = $('sizeChips');
+  SIZES.forEach(s => { const b = document.createElement('button'); b.type='button'; b.className='chip'; b.dataset.size = s; b.textContent = s + '×' + s; sc.appendChild(b); });
+  sc.addEventListener('click', e => { const b = e.target.closest('.chip'); if(!b) return; settings.randSize = +b.dataset.size; saveSettings(); refreshMenu(); Sound.play('click'); });
+  const dc = $('diffChips');
+  DIFF_NAMES.forEach((d,k) => { const b = document.createElement('button'); b.type='button'; b.className='chip'; b.dataset.diff = k; b.textContent = d; dc.appendChild(b); });
+  dc.addEventListener('click', e => { const b = e.target.closest('.chip'); if(!b) return; settings.randDiff = +b.dataset.diff; saveSettings(); refreshMenu(); Sound.play('click'); });
+}
+function dailyStreak(){
+  let s = 0; const d = new Date();
+  if(!progress.daily[todayKey(d)]) d.setDate(d.getDate() - 1);
+  while(progress.daily[todayKey(d)]){ s++; d.setDate(d.getDate() - 1); }
+  return s;
+}
+function refreshMenu(){
+  for(const b of $('levelGrid').children){
+    const L = +b.dataset.level, rec = progress.levels[L], [n] = levelSpec(L);
+    b.disabled = L > progress.unlocked;
+    b.classList.toggle('done', !!rec);
+    b.classList.toggle('current', !!(G.puzzle && G.puzzle.kind === 'level' && G.puzzle.level === L));
+    b.lastChild.textContent = rec ? '★'.repeat(rec.stars) + '☆'.repeat(3 - rec.stars) : n + '×' + n;
+    b.setAttribute('aria-label', 'ด่าน ' + L + (b.disabled ? ' (ล็อกอยู่)' : rec ? ' ผ่านแล้ว ' + rec.stars + ' ดาว' : ''));
+  }
+  const done = Object.keys(progress.levels).length;
+  $('levelInfo').textContent = 'ผ่านแล้ว ' + done + ' จาก ' + LEVEL_COUNT + ' ด่าน · ไขปริศนาสำเร็จทั้งหมด ' + (progress.solved|0) + ' ข้อ';
+  const key = todayKey(), [n,d] = dailySpec(new Date()), rec = progress.daily[key];
+  const dateTxt = new Date().toLocaleDateString('th-TH', {weekday:'long', day:'numeric', month:'long'});
+  const streak = dailyStreak();
+  $('dailyInfo').textContent = dateTxt + ' · ' + n + '×' + n + ' ' + DIFF_NAMES[d] + (rec ? ' · ผ่านแล้ว (' + fmtTime(rec.time) + ')' : '') + (streak ? ' · ต่อเนื่อง ' + streak + ' วัน' : '');
+  $('btnDaily').textContent = rec ? 'เล่นอีกครั้ง' : (G.puzzle && G.puzzle.kind === 'daily' && G.puzzle.date === key && !G.completed ? 'เล่นต่อ' : 'เล่นวันนี้');
+  for(const b of $('sizeChips').children) b.setAttribute('aria-pressed', +b.dataset.size === settings.randSize ? 'true' : 'false');
+  for(const b of $('diffChips').children) b.setAttribute('aria-pressed', +b.dataset.diff === settings.randDiff ? 'true' : 'false');
+}
+
+function applySettingsUI(){
+  document.querySelectorAll('.switch[data-setting]').forEach(sw => sw.setAttribute('aria-checked', settings[sw.dataset.setting] ? 'true' : 'false'));
+  $('btnMusic').classList.toggle('off', !settings.music); $('btnMusic').setAttribute('aria-pressed', settings.music ? 'true' : 'false');
+  $('btnSfx').classList.toggle('off', !settings.sfx); $('btnSfx').setAttribute('aria-pressed', settings.sfx ? 'true' : 'false');
+  $('debugPanel').hidden = !settings.debug;
+}
+function toggleSetting(key){
+  settings[key] = !settings[key]; saveSettings();
+  if(key === 'music'){ if(settings.music) Sound.startMusic(); else Sound.stopMusic(); }
+  if(key === 'sfx' && settings.sfx) Sound.play('click');
+  if(key === 'debug' && !settings.debug){ G.showSol = false; }
+  applySettingsUI(); renderBoard();
+}
+
+/* =========================================================
+   DEBUG PANEL + SELF TESTS
+   ========================================================= */
+function refreshDebug(){
+  if(!settings.debug || !G.puzzle) return;
+  const p = G.puzzle, v = G.validation || {}, gi = G.genInfo, n = p.n, geo = G.geo;
+  if(!G.logic) G.logic = solveLogically(geo, p.solution);
+  const ok = b => b ? '✓' : '✗';
+  const L = [];
+  L.push('รหัส: ' + p.seed);
+  L.push('ประเภท: ' + p.kind + '   ขนาด: ' + n + '×' + n);
+  L.push('ความยาก: เป้าหมาย ' + (p.diffTarget != null ? DIFF_NAMES[p.diffTarget] : '-') + ' / จริง ' + DIFF_NAMES[p.diff] + ' (เทคนิคสูงสุดระดับ ' + p.maxLevel + ')');
+  if(gi) L.push('การสร้าง: ' + gi.ms + ' ms, ' + gi.attempts + ' รอบ' + (gi.fallback ? ' (ใช้ปริศนาสำรอง)' : ''));
+  L.push(ok(v.ok) + ' ปริศนาผ่านการตรวจสอบ' + (v.errors && v.errors.length ? ': ' + v.errors.join(', ') : ''));
+  L.push(ok(v.contiguous && v.contiguous.every(Boolean)) + ' ทุกเขตต่อเนื่องกัน · ขนาดเขต [' + (v.sizes || []).join(', ') + ']');
+  L.push(ok(v.solOk) + ' คำตอบที่บันทึกผ่านกฎ แถว/คอลัมน์/เขต/ไม่ติดกัน');
+  L.push(ok(v.solutionCount === 1) + ' จำนวนคำตอบจากตัวแก้ย้อนรอย: ' + v.solutionCount + (v.solutionCount >= 2 ? '+' : ''));
+  L.push(ok(G.logic.ok) + ' ตัวแก้เชิงตรรกะไขได้ใน ' + G.logic.steps.length + ' ขั้น');
+  L.push('แผนที่เขต (* = คำตอบ):');
+  for(let r=0;r<n;r++){ let row = ''; for(let c=0;c<n;c++){ const i = r*n+c; row += String.fromCharCode(65 + p.regions[i]) + (G.solSet.has(i) ? '*' : ' ') + ' '; } L.push('  ' + row); }
+  $('dbgPuzzle').textContent = L.join('\n');
+  const a = G.analysis || analyzeBoard(geo, G.cells), B = [];
+  const fmt = arr => arr.map(x => x === 1 ? '1' : x === 0 ? '·' : x).join(' ');
+  B.push('สถานะกระดานปัจจุบัน');
+  B.push(ok(a.rowC.every(x => x <= 1)) + ' แถว:    ' + fmt(a.rowC));
+  B.push(ok(a.colC.every(x => x <= 1)) + ' คอลัมน์: ' + fmt(a.colC));
+  B.push(ok(a.regC.every(x => x <= 1)) + ' เขต:    ' + fmt(a.regC));
+  const touch = a.pairs.filter(x => x.why === 'touch');
+  B.push(ok(!touch.length) + ' แมวติดกัน/ทแยง: ' + (touch.length ? touch.map(x => '(' + (((x.a/n)|0)+1) + ',' + (x.a%n+1) + ')↔(' + (((x.b/n)|0)+1) + ',' + (x.b%n+1) + ')').join(' ') : 'ไม่มี'));
+  if(a.pairs.length) B.push('ข้อขัดแย้งทั้งหมด: ' + a.pairs.map(x => '(' + (((x.a/n)|0)+1) + ',' + (x.a%n+1) + ')↔(' + (((x.b/n)|0)+1) + ',' + (x.b%n+1) + ') ' + x.why).join(' · '));
+  const right = a.cats.filter(i => G.solSet.has(i)).length;
+  B.push('แมวตรงคำตอบ: ' + right + '/' + n + ' · แมวผิดตำแหน่ง: ' + (a.cats.length - right));
+  B.push('ตรวจคำตอบ: ' + (a.complete ? (p.solution.every((c,r) => G.cells[r*n+c] === 1) ? '✓ ครบถ้วนและตรงคำตอบ' : '✗ ครบแต่ไม่ตรงคำตอบ') : 'ยังไม่ครบ'));
+  $('dbgBoard').textContent = B.join('\n');
+}
+
+let testsRunning = false;
+async function runSelfTests(){
+  if(testsRunning) return; testsRunning = true;
+  const out = $('dbgTests'), lines = []; let pass = 0, fail = 0;
+  const log = s => { lines.push(s); out.textContent = lines.join('\n'); };
+  const check = (cond, label) => { if(cond){ pass++; } else { fail++; log('  ✗ ' + label); } return cond; };
+  const sleep = () => new Promise(r => setTimeout(r, 0));
+  log('เริ่มชุดทดสอบ…');
+  try{
+    // validator unit tests
+    const rng = rngFromSeed('unit');
+    const fb = fallbackPuzzle(6, rng);
+    check(validatePuzzle(fb).ok, 'ปริศนาสำรอง 6×6 ต้องผ่าน');
+    const colReg = {n:6, regions:[...Array(36).keys()].map(i => i % 6), solution:fb.solution};
+    const vc = validatePuzzle(colReg);
+    check(!vc.ok && vc.solutionCount > 1, 'ต้องตรวจพบปริศนาหลายคำตอบ');
+    const broken = {n:6, regions:fb.regions.slice(), solution:fb.solution.slice()}; broken.solution[1] = broken.solution[0] + (broken.solution[0] < 5 ? 1 : -1);
+    check(!validatePuzzle(broken).ok, 'ต้องตรวจพบคำตอบที่ผิดกฎ');
+    const geo6 = makeGeo(6, fb.regions), cells = new Array(36).fill(0);
+    fb.solution.forEach((c,r) => cells[r*6+c] = 1);
+    check(analyzeBoard(geo6, cells).complete, 'ตัววิเคราะห์ต้องยอมรับคำตอบที่ถูก');
+    const bad = new Array(36).fill(0); bad[0] = 1; bad[7] = 1;
+    const ab = analyzeBoard(geo6, bad);
+    check(ab.pairs.some(x => x.why === 'touch'), 'ตัววิเคราะห์ต้องตรวจพบแมวติดกันแนวทแยง');
+    const nonc = {n:5, regions:[0,0,0,0,0, 1,1,1,1,1, 2,2,2,2,2, 3,3,3,3,3, 0,4,4,4,4], solution:[0,2,4,1,3]};
+    check(validatePuzzle(nonc).errors.some(e => e.includes('ไม่ต่อเนื่อง')), 'ต้องตรวจพบเขตที่ไม่ต่อเนื่อง');
+    log('ทดสอบตัวตรวจสอบ: ผ่าน ' + pass + ' / ' + (pass+fail));
+    // generation sweep
+    for(const n of SIZES){
+      for(let d=0; d<3; d++){
+        for(let s=0; s<2; s++){
+          await sleep();
+          const seed = 'selftest-' + n + '-' + d + '-' + s;
+          const res = generatePuzzle(n, d, seed), p = res.puzzle;
+          const v = validatePuzzle(p), ls = solveLogically(makeGeo(n, p.regions), p.solution);
+          const good = check(v.ok && v.solutionCount === 1 && v.contiguous.every(Boolean) && v.solOk && ls.ok, n + '×' + n + ' ' + DIFF_NAMES[d] + ' #' + s + ' ' + v.errors.join(','));
+          log((good ? '✓ ' : '✗ ') + n + '×' + n + ' เป้า ' + DIFF_NAMES[d] + ' → จริง ' + DIFF_NAMES[p.diff] + ' · ' + res.ms + ' ms · ' + res.attempts + ' รอบ · ตรรกะ ' + ls.steps.length + ' ขั้น' + (res.fallback ? ' (สำรอง)' : ''));
+        }
+      }
+    }
+    // determinism
+    await sleep();
+    const a1 = generatePuzzle(7, 1, 'catnap-daily-2024-01-01').puzzle, a2 = generatePuzzle(7, 1, 'catnap-daily-2024-01-01').puzzle;
+    check(a1.regions.join() === a2.regions.join() && a1.solution.join() === a2.solution.join(), 'ปริศนาจาก seed เดียวกันต้องเหมือนกัน');
+    for(const n of SIZES){ const f = fallbackPuzzle(n, rngFromSeed('fb' + n)); check(validatePuzzle(f).ok, 'ปริศนาสำรอง ' + n + '×' + n); }
+    log('');
+    log('สรุป: ผ่าน ' + pass + ' · ไม่ผ่าน ' + fail + (fail ? '  ← มีรายการไม่ผ่าน' : '  ทุกรายการผ่าน'));
+  }catch(e){ log('✗ ชุดทดสอบหยุดเพราะข้อผิดพลาด: ' + e.message); showError('ชุดทดสอบล้มเหลว: ' + e.message); }
+  testsRunning = false;
+}
+
+/* =========================================================
+   EVENTS
+   ========================================================= */
+function wire(){
+  board.addEventListener('click', e => { const b = e.target.closest('.cell'); if(b) onCellTap(+b.dataset.i); });
+  $('btnMode').addEventListener('click', () => { G.mode = G.mode === 'cat' ? 'note' : 'cat'; updateModeUI(); renderBoard(); Sound.play('click');
+    toast(G.mode === 'note' ? 'โหมดจดโน้ต: แตะเพื่อใส่ ✕ → รอยเท้า → ลบ' : 'โหมดวางแมว'); saveSoon(); });
+  $('btnHint').addEventListener('click', doHint);
+  $('btnUndo').addEventListener('click', undo);
+  $('btnRestart').addEventListener('click', () => {
+    if(!G.puzzle) return;
+    if(G.moves === 0 && !G.completed){ toast('กระดานยังว่างอยู่'); return; }
+    askConfirm('เริ่มปริศนานี้ใหม่?', 'แมวและโน้ตทั้งหมดจะถูกล้าง เวลาและตาเดินจะเริ่มนับใหม่', restart);
+  });
+  $('btnMenu').addEventListener('click', () => openModal('menuModal'));
+  $('btnHelp').addEventListener('click', () => openModal('tutorialModal'));
+  $('btnSettings').addEventListener('click', () => openModal('settingsModal'));
+  $('btnMusic').addEventListener('click', () => toggleSetting('music'));
+  $('btnSfx').addEventListener('click', () => toggleSetting('sfx'));
+  document.querySelectorAll('.switch[data-setting]').forEach(sw => sw.addEventListener('click', () => toggleSetting(sw.dataset.setting)));
+  $('btnDaily').addEventListener('click', startDaily);
+  $('btnRandom').addEventListener('click', startRandom);
+  $('btnNext').addEventListener('click', () => {
+    const p = G.puzzle; closeModal('winModal');
+    if(p.kind === 'level' && p.level < LEVEL_COUNT) startLevel(p.level + 1);
+    else if(p.kind === 'random') startRandom();
+    else openModal('menuModal');
+  });
+  $('btnWinMenu').addEventListener('click', () => { closeModal('winModal'); openModal('menuModal'); });
+  $('cfOk').addEventListener('click', () => { closeModal('confirmModal'); const cb = confirmCb; confirmCb = null; if(cb) cb(); });
+  $('btnReset').addEventListener('click', () => askConfirm('ล้างความคืบหน้า?', 'ด่านที่ปลดล็อก สถิติ และประวัติประจำวันทั้งหมดจะถูกลบ', () => {
+    progress.unlocked = 1; progress.levels = {}; progress.daily = {}; progress.solved = 0; saveProgress(); Store.del(KC); toast('ล้างความคืบหน้าแล้ว'); startLevel(1);
+  }));
+  document.querySelectorAll('.modal').forEach(m => {
+    m.addEventListener('click', e => {
+      if(e.target.closest('[data-close]')){ closeModal(m.id); return; }
+      if(e.target === m && !m.dataset.static) closeModal(m.id);
+    });
+  });
+  $('errorClose').addEventListener('click', () => $('errorBar').classList.remove('show'));
+  $('dbgClose').addEventListener('click', () => { if(settings.debug) toggleSetting('debug'); });
+  $('dbgRefresh').addEventListener('click', () => { if(G.puzzle){ G.validation = validatePuzzle(G.puzzle); G.logic = null; refreshDebug(); toast('ตรวจสอบใหม่แล้ว'); } });
+  $('dbgShowSol').addEventListener('click', () => { G.showSol = !G.showSol; renderBoard(); });
+  $('dbgSolve').addEventListener('click', () => {
+    if(!G.puzzle || G.completed) return;
+    const n = G.puzzle.n, changes = [];
+    for(let i=0;i<n*n;i++){ const to = G.solSet.has(i) ? 1 : 0; if(G.cells[i] !== to) changes.push({i, from:G.cells[i], to}); }
+    if(changes.length) commit(changes);
+    G.debugSolved = true; G.wrong.clear(); renderBoard(); checkWin();
+  });
+  $('dbgTest').addEventListener('click', runSelfTests);
+
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape'){ const open = [...document.querySelectorAll('.modal.open')].filter(m => !m.dataset.static).pop(); if(open) closeModal(open.id); return; }
+    if(anyModalOpen() || !G.puzzle) return;
+    if(e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+    const n = G.puzzle.n, k = e.key;
+    const moveSel = (dr,dc) => { let i = G.sel < 0 ? 0 : G.sel; let r = (i/n)|0, c = i%n; r = Math.max(0, Math.min(n-1, r+dr)); c = Math.max(0, Math.min(n-1, c+dc)); G.sel = r*n + c; renderBoard(); e.preventDefault(); };
+    if(k === 'ArrowUp') return moveSel(-1,0);
+    if(k === 'ArrowDown') return moveSel(1,0);
+    if(k === 'ArrowLeft') return moveSel(0,-1);
+    if(k === 'ArrowRight') return moveSel(0,1);
+    if((k === 'z' || k === 'Z') && (e.ctrlKey || e.metaKey || true)){ e.preventDefault(); undo(); return; }
+    if(k === 'h' || k === 'H'){ doHint(); return; }
+    if(k === 'm' || k === 'M'){ $('btnMode').click(); return; }
+    if(G.sel < 0) return;
+    if(k === 'Enter' || k === ' '){ e.preventDefault(); onCellTap(G.sel, 'cat'); return; }
+    if(k === 'x' || k === 'X'){ onCellTap(G.sel, 'note'); return; }
+  });
+
+  if(window.ResizeObserver) new ResizeObserver(() => fitBoard()).observe(boardWrap);
+  window.addEventListener('resize', fitBoard);
+  window.addEventListener('orientationchange', () => setTimeout(fitBoard, 200));
+  document.addEventListener('visibilitychange', () => { G.lastTick = performance.now(); if(document.hidden){ saveNow(); if(Sound.timer) Sound.stopMusic(); } else if(settings.music) Sound.startMusic(); });
+  window.addEventListener('pagehide', saveNow);
+  document.addEventListener('pointerdown', () => { Sound.init(); if(settings.music) Sound.startMusic(); }, {once:true});
+}
+
+/* ---------- timer ---------- */
+let lastShown = -1;
+setInterval(() => {
+  const now = performance.now();
+  if(G.puzzle && !G.completed && !document.hidden && !anyModalOpen()) G.elapsed += now - G.lastTick;
+  G.lastTick = now;
+  const s = Math.floor(G.elapsed / 1000);
+  if(s !== lastShown){ lastShown = s; $('sTime').textContent = fmtTime(G.elapsed); if(s % 10 === 0) saveSoon(); }
+}, 250);
+
+/* =========================================================
+   INIT
+   ========================================================= */
+function init(){
+  buildMenu(); wire(); applySettingsUI(); updateModeUI();
+  const saved = Store.get(KC, null);
+  let restored = false;
+  if(saved && saved.puzzle){
+    try{ loadPuzzle(saved.puzzle, saved); G.genInfo = null; restored = true; }
+    catch(e){ console.warn(e); Store.del(KC); showError('ไม่สามารถโหลดเกมที่บันทึกไว้ได้ (' + e.message + ') จึงเริ่มปริศนาใหม่ให้'); }
+  }
+  if(!restored) startLevel(Math.min(progress.unlocked || 1, LEVEL_COUNT));
+  if(!settings.seenTutorial) openModal('tutorialModal');
+}
+try{ init(); }catch(e){ showError('เริ่มเกมไม่สำเร็จ: ' + e.message); }
+</script>
+</body>
+</html>
